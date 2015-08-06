@@ -1,0 +1,6 @@
+linux-4.1.1/
+rootfs/
+images/
+*.img
+*.swp
+*.o
