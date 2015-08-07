@@ -1,0 +1,73 @@
+#!/bin/sh
+
+root_dir=`pwd`
+export root_dir
+
+KSRC=$root_dir/linux-4.1.1
+export KSRC
+
+make_kernel()
+{
+	echo "make kernel"
+	cd $root_dir
+
+	cp -f x86_64_defconfig $KSRC/arch/x86/configs/
+	cd $KSRC
+	make x86_64_defconfig
+	make j=4	
+	cp -f arch/x86/boot/bzImage ../images/nvs_kernel.img
+}
+
+make_example()
+{
+	echo "make example"
+
+	cd $root_dir/example
+
+	make
+}
+
+make_clean()
+{
+	cd $root_dir
+	rm -rf rootfs.*
+
+	cd $root_dir/images
+	rm -rf *.img
+}
+
+make_images()
+{
+	echo "make images"	
+	cd $root_dir
+
+	cd rootfs
+	find . | sudo cpio --format=newc -oF ../rootfs.cpio
+	cd ..
+	lzma -z -9 < rootfs.cpio > nvs_rootfs.img
+	rm -rf rootfs.cpio
+	mv nvs_rootfs.img images/
+}
+
+if [ ! -d images ]; then mkdir images; fi
+
+if [ $# -eq 0 ]; then
+	make_kernel
+	make_images
+else
+	while [ $# -gt 0 ]
+	do
+		case $1 in
+			-k)
+				make_kernel
+				;;
+			-i)
+				make_images
+				;;
+			-c)
+				make_clean
+				;;
+		esac
+		shift
+	done
+fi
