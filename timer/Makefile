@@ -1,23 +1,36 @@
-TARGETS := demo
+TARGETS := timer
 
-target_OBJECTS = objs/demo.o
+target_OBJECTS = timer.o rte_timer.o wheel_timer.o \
+				 min_heap_timer.o rbtree_timer.o
 
 CFLAGS = -g -Wall -rdynamic
 CC = gcc
 NM = nm
-INCLUDES= -I../include/ 
+INCLUDES= -I../include/  -I./
 LIBS = -ldl -lm -lpthread
 COMPILE = $(CC) $(CFLAGS) $(INCLUDES)
 LINK = $(COMPILE) -o $@
 
 all: $(TARGETS)
 
-demo: $(target_OBJECTS) 
+timer : $(target_OBJECTS)
 	$(LINK) $(target_OBJECTS) $(LIBS) $(LIBS_INCLUDE)
 
-objs/demo.o: demo.c
+timer.o: timer.c
+	$(COMPILE) -c -o $@ $<
+
+rte_timer.o: rte_timer.c
+	$(COMPILE) -c -o $@ $<
+
+wheel_timer.o: wheel_timer.c
+	$(COMPILE) -c -o $@ $<
+
+min_heap_timer.o: min_heap_timer.c
+	$(COMPILE) -c -o $@ $<
+
+rbtree_timer.o: rbtree_timer.c
 	$(COMPILE) -c -o $@ $<
 
 clean:
-	- rm -f objs/*.o .tmp*
+	- rm -f *.o *.tmp
 	- rm -f $(TARGETS)

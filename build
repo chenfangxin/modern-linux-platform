@@ -18,11 +18,11 @@ make_kernel()
 	cp -f arch/x86/boot/bzImage ../images/nvs_kernel.img
 }
 
-make_example()
+make_timer()
 {
 	echo "make example"
 
-	cd $root_dir/example
+	cd $root_dir/timer
 
 	make
 }
@@ -31,6 +31,9 @@ make_clean()
 {
 	cd $root_dir
 	rm -rf rootfs.*
+
+	cd $root_dir/timer
+	make clean
 
 	cd $root_dir/images
 	rm -rf *.img
@@ -60,6 +63,9 @@ else
 		case $1 in
 			-k)
 				make_kernel
+				;;
+			-t)
+				make_timer
 				;;
 			-i)
 				make_images

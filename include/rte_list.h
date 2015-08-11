@@ -8,8 +8,8 @@ static inline void prefetch(const void *addr)
 			: [addr] "+m" (*(volatile char *)addr));
 }
 
-#define NM_LIST_POISION1 ((void *)0x00100100)
-#define NM_LIST_POISION2 ((void *)0x00200200)
+#define RTE_LIST_POISION1 ((void *)0x00100100)
+#define RTE_LIST_POISION2 ((void *)0x00200200)
 
 struct list_head {
 	struct list_head *next, *prev;
@@ -58,8 +58,8 @@ static inline void __list_del_entry(struct list_head *entry)
 static inline void list_del(struct list_head *entry)
 {
 	__list_del(entry->prev, entry->next);
-	entry->next = NM_LIST_POISION1;
-	entry->prev = NM_LIST_POISION2;
+	entry->next = RTE_LIST_POISION1;
+	entry->prev = RTE_LIST_POISION2;
 }
 
 static inline void list_del_init(struct list_head *entry)
