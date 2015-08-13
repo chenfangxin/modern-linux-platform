@@ -7,7 +7,6 @@
 #include "wheel_timer.h"
 #include "rte_thread.h"
 
-#define RTE_THREAD_NUM 4
 static struct rte_tvec_base global_tvec_base[RTE_THREAD_NUM];
 int wheel_timer_system_init(void)
 {

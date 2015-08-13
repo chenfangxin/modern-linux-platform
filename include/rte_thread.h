@@ -1,5 +1,8 @@
 #ifndef __RTE_THREAD_H__
 #define __RTE_THREAD_H__
+#include "rte_types.h"
+
+#define RTE_THREAD_NUM 4
 
 static inline uint32_t rte_get_thread_id(void)
 {

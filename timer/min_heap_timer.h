@@ -4,7 +4,7 @@
 #include "rte_timer.h"
 
 typedef struct min_heap{
-	void *p;
+	struct rte_timer **p;
 	unsigned int n, a;
 }min_heap_t;
 

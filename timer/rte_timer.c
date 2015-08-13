@@ -15,6 +15,7 @@ int rte_timer_init(struct rte_timer *tim, void(*func)(struct rte_timer *), uint6
 {
 	memset(tim, 0, sizeof(struct rte_timer));
 	INIT_LIST_HEAD(&(tim->list));
+	tim->min_heap_idx = -1;
 	tim->func = func;
 	tim->data = data;
 	tim->flags |= RTE_TIMER_INITED;

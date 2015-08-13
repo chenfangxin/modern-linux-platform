@@ -9,7 +9,8 @@
 struct rte_timer;
 
 struct rte_timer{
-	struct list_head list;
+	struct list_head list; // For wheel timer
+	int32_t min_heap_idx; // For min_heap timer
 	uint32_t flags;
 	uint64_t expire;
 	void (*func)(struct rte_timer *);
