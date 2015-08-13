@@ -25,6 +25,11 @@ static void min_heap_dtor(min_heap_t *s)
 	return;
 }
 
+int min_heap_timer_system_init(void)
+{
+	return 0;
+}
+
 int add_min_heap_timer(struct rte_timer *tim, uint32_t expire)
 {
 	return 0;

@@ -5,6 +5,11 @@
  */
 #include "rbtree_timer.h"
 
+int rbtree_timer_system_init(void)
+{
+	return 0;
+}
+
 int add_rbtree_timer(struct rte_timer *tim, uint32_t expire)
 {
 	return 0;

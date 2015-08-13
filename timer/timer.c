@@ -2,6 +2,8 @@
 #include <stdlib.h>
 #include <rte_timer.h>
 #include "wheel_timer.h"
+#include "min_heap_timer.h"
+#include "rbtree_timer.h"
 
 void test_func(struct rte_timer *tim)
 {		
@@ -32,7 +34,7 @@ int main(void)
 #endif
 	struct rte_timer *tim = (struct rte_timer *)malloc(sizeof(struct rte_timer));
 	rte_timer_init(tim, test_func, 0);
-
+#if 0
 	wheel_timer_system_init();	
 
 	add_wheel_timer(tim, 5000);
@@ -40,6 +42,27 @@ int main(void)
 	while(1){
 		wheel_timer_manage();
 	}
+#endif
+
+#if 1
+	min_heap_timer_system_init();
+
+	add_min_heap_timer(tim, 5000);
+
+	while(1){
+		min_heap_timer_manage();
+	}
+#endif
+
+#if 1
+	rbtree_timer_system_init();
+
+	add_rbtree_timer(tim, 5000);
+
+	while(1){
+		rbtree_timer_manage();
+	}
+#endif
 
 	return 0;
 }
