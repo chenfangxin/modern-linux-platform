@@ -4,8 +4,9 @@
 #include "rte_timer.h"
 
 typedef struct min_heap{
-	struct rte_timer **p;
-	unsigned int n, a;
+	struct rte_timer **p; /* 存放元素的数组 */
+	uint32_t n; /* 当前存放的元素个数 */
+	uint32_t a; /* 数组的容量 */
 }min_heap_t;
 
 int min_heap_timer_system_init(void);

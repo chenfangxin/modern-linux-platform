@@ -1,21 +1,20 @@
 /* 
  * 堆排序
  * 堆是完全二叉树或近似完全二叉树(称为二叉堆)，其满足下面两个条件：
- * 1）父节点的键值总是小于或等于任意一个子节点的键值(最小堆或小根堆)
+ * 1）父节点的键值总是小于或等于任意一个子节点的键值(称为最小堆或小根堆)
  * 2）每个节点的左子树和右子树都是一个堆
  *
- * 堆存储在数组中(因此对实际能添加的定时器个数有一定限制)
- *
- * 节点i的父节点下标为(i-1)/2; 左右子节点的下标分别为(2*i+1)和(2*i+2)
+ * 堆存储在数组中(因此对实际能添加的定时器个数有一定限制)，利用数组下标快速访问堆中元素。节点i(i>=0)的父节点下标为(i-1)/2; 左右子节点的下标分别为(2*i+1)和(2*i+2)
  *
  * 插入操作：
  *   1) 将元素放在堆数组的尾部
  *   2) 比较元素的键值如果小于其父节点，则将父节点元素与之交换，直到根节点
  *
  * 删除操作：
+ *   删除发生在堆顶(称为POP)。其过程为先用最后一个元素取代堆顶，然后对堆进行调整，直到满足堆条件。
  *
  * 查找操作：
- *   最小堆的特性就是堆顶总是键值最小的元素，这对查找超时很有利
+ *   最小堆的特性就是堆顶总是键值最小的元素。利用这一特性,不断的弹出堆顶元素，就会得到一个有序的序列。
  *
  * 代码来自Libevent库
  */
@@ -54,11 +53,11 @@ static int min_heap_elem_greater(struct rte_timer *a, struct rte_timer *p)
 }
 
 /*
- * 如果插入的元素的键值较小，则将其向树根移动，直到合适位置
+ * 向上调整
  * */
 static void min_heap_shift_up(min_heap_t *s, uint32_t hole_index, struct rte_timer *tim)
 {
-	uint32_t parent = (hole_index-1)/2;
+	uint32_t parent = hole_index?(hole_index-1)/2:hole_index;
 	while(hole_index && min_heap_elem_greater(s->p[parent], tim)){
 		(s->p[hole_index]=s->p[parent])->min_heap_idx = hole_index;
 		hole_index = parent;
@@ -70,12 +69,13 @@ static void min_heap_shift_up(min_heap_t *s, uint32_t hole_index, struct rte_tim
 }
 
 /*
+ * 向下调整
  * */
 static void min_heap_shift_down(min_heap_t *s, uint32_t hole_index, struct rte_timer *tim)
 {
-	uint32_t min_child = 2 * (hole_index + 1);
+	uint32_t min_child = 2 * (hole_index + 1); /* hole_index的右子节点 */
 	while(min_child <= s->n){
-		min_child -= (min_child == s->n || min_heap_elem_greater(s->p[min_child], s->p[min_child - 1]));
+		min_child -= (min_child == s->n || min_heap_elem_greater(s->p[min_child], s->p[min_child - 1])); /* 左子节点 */
 		if(!min_heap_elem_greater(tim, s->p[min_child])){
 			break;
 		}
@@ -108,6 +108,9 @@ int add_min_heap_timer(struct rte_timer *tim, uint32_t expire)
 	return 0;
 }
 
+/*
+ * 删除Heap中的某个元素，先用Heap中最后一个元素取代指定位置的元素，然后调整Heap
+ * */
 int del_min_heap_timer(struct rte_timer *tim)
 {
 	uint32_t thread_idx = rte_get_thread_id();
@@ -116,6 +119,7 @@ int del_min_heap_timer(struct rte_timer *tim)
 
 	if(-1!=tim->min_heap_idx){
 		last = s->p[--s->n];
+		s->p[s->n] = NULL;
 		uint32_t parent = (tim->min_heap_idx-1)/2;
 		if(tim->min_heap_idx>0 && min_heap_elem_greater(s->p[parent], last)){
 			min_heap_shift_up(s, tim->min_heap_idx, last);

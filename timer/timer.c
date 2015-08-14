@@ -9,31 +9,20 @@
 #define RTE_MIN_HEAP_TIMER
 // #define RTE_RBTREE_TIMER
 
-void test_func1(struct rte_timer *tim)
+void test_func(struct rte_timer *tim)
 {
-	printf("In test_func1, usec=%ld\n", rte_get_cur_time());
-#ifdef RTE_WHEEL_TIMER
-	add_wheel_timer(tim, 5000);
-#endif
-#ifdef RTE_MIN_HEAP_TIMER
-	add_min_heap_timer(tim, 5000);
-#endif
-#ifdef RTE_RBTREE_TIMER
-	add_rbtree_timer(tim, 5000);
-#endif
-}
+	printf("In test_func, tim->data=%ld\n",tim->data);
 
-void test_func2(struct rte_timer *tim)
-{
-	printf("In test_func2, usec=%ld\n", rte_get_cur_time());
 #ifdef RTE_WHEEL_TIMER
-	add_wheel_timer(tim, 1000);
+	add_wheel_timer(tim, tim->data);
 #endif
+
 #ifdef RTE_MIN_HEAP_TIMER
-	add_min_heap_timer(tim, 1000);
+	add_min_heap_timer(tim, tim->data);
 #endif
+
 #ifdef RTE_RBTREE_TIMER
-	add_rbtree_timer(tim, 1000);
+	add_rbtree_timer(tim, tim->data);
 #endif
 }
 
@@ -57,18 +46,18 @@ int main(void)
 		}
 	}
 #endif
-	struct rte_timer *tim1=NULL, *tim2=NULL;
-	tim1 = (struct rte_timer *)malloc(sizeof(struct rte_timer));
-	tim2 = (struct rte_timer *)malloc(sizeof(struct rte_timer));
-
-	rte_timer_init(tim1, test_func1, 0);
-	rte_timer_init(tim2, test_func2, 0);
+	struct rte_timer *tim=NULL;
 
 #ifdef RTE_WHEEL_TIMER
 	wheel_timer_system_init();
 
-	add_wheel_timer(tim1, 5000);
-	add_wheel_timer(tim2, 1000);
+	tim = (struct rte_timer *)malloc(sizeof(struct rte_timer));
+	rte_timer_init(tim, test_func, 5000);
+	add_wheel_timer(tim, 5000);
+
+	tim = (struct rte_timer *)malloc(sizeof(struct rte_timer));
+	rte_timer_init(tim, test_func, 1000);
+	add_wheel_timer(tim, 1000);
 
 	while(1){
 		wheel_timer_manage();
@@ -78,8 +67,13 @@ int main(void)
 #ifdef RTE_MIN_HEAP_TIMER
 	min_heap_timer_system_init();
 
-	add_min_heap_timer(tim1, 5000);
-	add_min_heap_timer(tim2, 1000);
+	tim = (struct rte_timer *)malloc(sizeof(struct rte_timer));
+	rte_timer_init(tim, test_func, 1000);
+	add_min_heap_timer(tim, 1000);
+
+	tim = (struct rte_timer *)malloc(sizeof(struct rte_timer));
+	rte_timer_init(tim, test_func, 5000);
+	add_min_heap_timer(tim, 5000);
 
 	while(1){
 		min_heap_timer_manage();
@@ -89,8 +83,19 @@ int main(void)
 #ifdef RTE_RBTREE_TIMER
 	rbtree_timer_system_init();
 
-	add_rbtree_timer(tim1, 5000);
-	add_rbtree_timer(tim2, 1000);
+	tim = (struct rte_timer *)malloc(sizeof(struct rte_timer));
+	if(NULL==tim){
+		return -1;
+	}
+	rte_timer_init(tim, test_func, 0);
+	add_rbtree_timer(tim, 5000);
+
+	tim = (struct rte_timer *)malloc(sizeof(struct rte_timer));
+	if(NULL==tim){
+		return -1;
+	}
+	rte_timer_init(tim, test_func, 0);
+	add_rbtree_timer(tim, 1000);
 
 	while(1){
 		rbtree_timer_manage();
