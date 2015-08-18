@@ -30,4 +30,11 @@ uint64_t rte_get_cur_time(void);
 		 ((long)(a)-(long)(b)>=0))
 
 int rte_timer_init(struct rte_timer *tim, void(*func)(struct rte_timer *), uint64_t data);
+
+int rte_timer_system_init(void);
+int rte_add_timer(struct rte_timer *tim, uint32_t expire);
+int rte_del_timer(struct rte_timer *tim);
+int rte_modify_timer(struct rte_timer *tim, uint32_t expire);
+int rte_timer_manage(void);
+
 #endif

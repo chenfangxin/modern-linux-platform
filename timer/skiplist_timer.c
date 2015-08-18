@@ -1,7 +1,8 @@
 /*
  * skiplist是Wiliam Pugh发明的一种随机化的数据结构，基于并联的链表，其插入/删除/查找的复杂度都为O(lgN)，这个特性跟红黑树差不多，但是实现起来简单得多。
  *
- * 代码来自Redis
+ *
+ * 代码参考Redis
  * */
 #include <stdio.h>
 #include <stdlib.h>
@@ -9,26 +10,32 @@
 #include "skiplist_timer.h"
 #include "rte_thread.h"
 
-skiplistNode *slCreateNode(int level, double score)
+/*
+ * 创建skiplist中的节点, level为该节点的层数
+ * */
+static skiplistNode *slCreateNode(int level, struct rte_timer *tim)
 {
 	int size;
 	skiplistNode *node=NULL;
-	size = sizeof(struct skiplistNode)+level*sizeof(struct skiplistLevel);
+	size = sizeof(skiplistNode)+level*sizeof(skiplistNode *);
 	node=malloc(size);
 	if(NULL==node){
 		return NULL;
 	}
 	memset(node, 0, size);
-	node->score = score;
+	node->tim = tim;
 	return node;
 }
 
-skiplist *slCreate(void)
+/*
+ * 创建skiplist
+ * */
+static skiplist *slCreate(void)
 {
 	int j;
 	skiplist *sl;
 
-	sl = malloc(sizeof(struct skiplist));
+	sl = malloc(sizeof(skiplist));
 	if(NULL==sl){
 		return NULL;
 	}
@@ -36,34 +43,28 @@ skiplist *slCreate(void)
 	sl->length = 0;
 	sl->header = slCreateNode(SKIPLIST_MAXLEVEL, 0);
 	for(j=0;j<SKIPLIST_MAXLEVEL;j++){
-		sl->header->level[j].forward = NULL;
+		sl->header->forward[j] = NULL;
 	}
-	sl->header->backward = NULL;
-	sl->tail = NULL;
-
 	return sl;
 }
 
-void slFreeNode(skiplistNode *node)
+#if 0
+static void slFree(skiplist *sl)
 {
-	free(node);
-}
-
-void slFree(skiplist *sl)
-{
-	skiplistNode *node = sl->header->level[0].forward;
+	skiplistNode *node = sl->header->forward[0];
 	skiplistNode *next;
 
 	free(sl->header);
 	while(node){
-		next = node->level[0].forward;
-		slFreeNode(node);
+		next = node->forward[0];
+		free(node);
 		node = next;
 	}
 	free(sl);
 }
+#endif
 
-int slRandomLevel(void)
+static int slRandomLevel(void)
 {
 	int level=1;
 	while((rand()&0xFFFF)<(SKIPLIST_P*0xFFFF)){
@@ -72,17 +73,27 @@ int slRandomLevel(void)
 	return (level<SKIPLIST_MAXLEVEL)?level:SKIPLIST_MAXLEVEL;
 }
 
-skiplistNode *slInsert(skiplist *sl, double score)
+static int cmp_node(struct rte_timer *orig, struct rte_timer *new)
 {
-	skiplistNode *update[SKIPLIST_MAXLEVEL];
+	return (orig->expire < new->expire);
+}
+
+static int is_equal_node(struct rte_timer *orig, struct rte_timer *new)
+{
+	return (orig->expire == new->expire);
+}
+
+static skiplistNode *slInsert(skiplist *sl, struct rte_timer *tim)
+{
+	skiplistNode *update[SKIPLIST_MAXLEVEL]={NULL};
 	skiplistNode *node;
 	int i, level;
 
 	node = sl->header;
 	for(i=sl->level-1; i>=0; i--){
-		while(node->level[i].forward &&
-				node->level[i].forward->score<score){
-			node = node->level[i].forward;
+		while(node->forward[i] &&
+				cmp_node(node->forward[i]->tim, tim)){
+			node = node->forward[i];
 		}
 		update[i]=node;
 	}
@@ -94,38 +105,25 @@ skiplistNode *slInsert(skiplist *sl, double score)
 		}
 		sl->level = level;
 	}
-	node = slCreateNode(level, score);
+	node = slCreateNode(level, tim);
 	for(i=0; i<level; i++){
-		node->level[i].forward = update[i]->level[i].forward;
-		update[i]->level[i].forward = node;
-	}
-
-	node->backward = (update[0]==sl->header?NULL:update[0]);
-	if(node->level[0].forward){
-		node->level[0].forward->backward = node;
-	}else{
-		sl->tail=node;
+		node->forward[i] = update[i]->forward[i];
+		update[i]->forward[i] = node;
 	}
 
 	sl->length++;
 	return node;
 }
 
-void slDeleteNode(skiplist *sl, skiplistNode *node, skiplistNode **update)
+static void slDeleteNode(skiplist *sl, skiplistNode *node, skiplistNode **update)
 {
 	int i;
 	for(i=0; i<sl->level; i++){
-		if(update[i]->level[i].forward==node){
-			update[i]->level[i].forward=node->level[i].forward;
+		if(update[i]->forward[i]==node){
+			update[i]->forward[i]=node->forward[i];
 		}
 	}
-	if(node->level[0].forward){
-		node->level[0].forward->backward = node->backward;
-	}else{
-		sl->tail = node->backward;
-	}
-
-	while(sl->level>1 && sl->header->level[sl->level-1].forward==NULL){
+	while(sl->level>1 && sl->header->forward[sl->level-1]==NULL){
 		sl->level--;
 	}
 	sl->length--;
@@ -133,48 +131,90 @@ void slDeleteNode(skiplist *sl, skiplistNode *node, skiplistNode **update)
 	return;
 }
 
-int slDelete(skiplist *sl, double score)
+static int slDelete(skiplist *sl, struct rte_timer *tim)
 {
-	skiplistNode *update[SKIPLIST_MAXLEVEL];
+	skiplistNode *update[SKIPLIST_MAXLEVEL]={NULL};
 	skiplistNode *node;
 	int i;
 
 	node = sl->header;
 	for(i=sl->level-1; i>=0; i--){
-		while(node->level[i].forward && node->level[i].forward->score<score){
-			node = node->level[i].forward;
+		while(node->forward[i] && cmp_node(node->forward[i]->tim, tim)){
+			node = node->forward[i];
 		}
 		update[i] = node;
 	}
 
-	node = node->level[0].forward;
-	if(node && score==node->score){
+	node = node->forward[0];
+	if(node && is_equal_node(tim, node->tim)){
 		slDeleteNode(sl, node, update);
-		slFreeNode(node);
+		free(node);
 		return 1;
 	}
 
 	return 0;
 }
 
-struct skiplistNode *slSearch(skiplist *sl, double score)
+static skiplist *global_skiplist[RTE_THREAD_NUM];
+int skiplist_timer_system_init(void)
 {
-	skiplistNode *node;
-	int i;
+	int i=0;
+	skiplist *sl=NULL;
 
-	node = sl->header;
-	for(i=sl->level-1; i>=0; i++){
-		while(node->level[i].forward && node->level[i].forward->score<score){
-			node = node->level[i].forward;
+	for(i=0;i<RTE_THREAD_NUM;i++){
+		sl = slCreate();
+		if(NULL==sl){
+			return -1;
 		}
-	}
-	node = node->level[0].forward;
-	if(node && score == node->score){
-		printf("Found %d\n", (int)node->score);
-		return node;
+		global_skiplist[i] = sl;
 	}
 
-	printf("Not Found %d\n", (int)score);
-	return NULL;
+	return 0;
 }
+
+int add_skiplist_timer(struct rte_timer *tim, uint32_t expire)
+{
+	uint32_t thread_idx = rte_get_thread_id();
+	skiplist *sl = global_skiplist[thread_idx];
+
+	if(!(tim->flags & RTE_TIMER_INITED)){
+		return -1;
+	}
+
+	if(tim->flags & RTE_TIMER_ADDED){
+		return -1;
+	}
+
+	// tim->expire = rte_get_cur_time() + expire;
+	tim->expire = expire;
+	slInsert(sl, tim);
+	tim->flags |= RTE_TIMER_ADDED;
+
+	return 0;
+}
+
+int del_skiplist_timer(struct rte_timer *tim)
+{
+	uint32_t thread_idx = rte_get_thread_id();
+	skiplist *sl = global_skiplist[thread_idx];
+
+	if(!(tim->flags & RTE_TIMER_ADDED)){
+		return -1;
+	}
+	slDelete(sl, tim);
+	tim->flags &= ~RTE_TIMER_ADDED;
+
+	return 0;
+}
+
+int modify_skiplist_timer(struct rte_timer *tim, uint32_t expire)
+{
+	return 0;
+}
+
+void skiplist_timer_manage(void)
+{
+	return;
+}
+
 

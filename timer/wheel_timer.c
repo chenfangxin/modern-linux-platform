@@ -107,11 +107,11 @@ int add_wheel_timer(struct rte_timer *tim, uint32_t expire)
 	struct rte_tvec_base *base=global_tvec_base+thread_idx;
 
 	if(!(tim->flags & RTE_TIMER_INITED)){
-		return 0;
+		return -1;
 	}
 
 	if(tim->flags & RTE_TIMER_ADDED){
-		return 0;
+		return -1;
 	}
 
 	rte_mutex_lock(&(base->mutex));
@@ -133,7 +133,7 @@ int del_wheel_timer(struct rte_timer *tim)
 	rte_mutex_lock(&(base->mutex));
 	if(!(tim->flags & RTE_TIMER_ADDED)){
 		rte_mutex_unlock(&(base->mutex));
-		return 0;
+		return -1;
 	}
 	list_del(&tim->list);
 	tim->flags &= ~(RTE_TIMER_ADDED);

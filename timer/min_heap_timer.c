@@ -97,11 +97,11 @@ int add_min_heap_timer(struct rte_timer *tim, uint32_t expire)
 	min_heap_t *s = global_min_heap + thread_idx;
 
 	if(!(tim->flags & RTE_TIMER_INITED)){
-		return 0;
+		return -1;
 	}
 
 	if(tim->flags & RTE_TIMER_ADDED){
-		return 0;
+		return -1;
 	}
 
 	tim->expire = rte_get_cur_time() + expire;
@@ -119,6 +119,10 @@ int del_min_heap_timer(struct rte_timer *tim)
 	uint32_t thread_idx = rte_get_thread_id();
 	min_heap_t *s = global_min_heap + thread_idx;
 	struct rte_timer *last=NULL;
+
+	if(!(tim->flags & RTE_TIMER_ADDED)){
+		return -1;
+	}
 
 	if(-1!=tim->min_heap_idx){
 		last = s->p[--s->n];
