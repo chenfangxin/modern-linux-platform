@@ -214,6 +214,9 @@ int modify_skiplist_timer(struct rte_timer *tim, uint32_t expire)
 
 void skiplist_timer_manage(void)
 {
+	uint32_t thread_idx = rte_get_thread_id();
+	skiplist *sl = global_skiplist[thread_idx];
+
 	return;
 }
 
