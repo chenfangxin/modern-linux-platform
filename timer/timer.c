@@ -32,7 +32,7 @@ int main(void)
 	struct rte_timer *tim=NULL;
 
 	rte_timer_system_init();
-
+#if 0
 	tim = (struct rte_timer *)malloc(sizeof(struct rte_timer));
 	if(NULL==tim){
 		return -1;
@@ -74,10 +74,30 @@ int main(void)
 	}
 	rte_timer_init(tim, test_func, 50);
 	rte_add_timer(tim, 50);
+#endif
 
+	tim = (struct rte_timer *)malloc(sizeof(struct rte_timer));
+	if(NULL==tim){
+		return -1;
+	}
+	rte_timer_init(tim, test_func, 2000);
+	rte_add_timer(tim, 2000);
+
+	tim = (struct rte_timer *)malloc(sizeof(struct rte_timer));
+	if(NULL==tim){
+		return -1;
+	}
+	rte_timer_init(tim, test_func, 3000);
+	rte_add_timer(tim, 3000);
+
+	tim = (struct rte_timer *)malloc(sizeof(struct rte_timer));
+	if(NULL==tim){
+		return -1;
+	}
+	rte_timer_init(tim, test_func, 1000);
+	rte_add_timer(tim, 1000);
 	while(1){
 		rte_timer_manage();
 	}
-
 	return 0;
 }

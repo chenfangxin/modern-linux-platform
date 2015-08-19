@@ -13,10 +13,11 @@
 /*
  * 创建skiplist中的节点, level为该节点的层数
  * */
-static skiplistNode *slCreateNode(int level, struct rte_timer *tim)
+static inline skiplistNode *slCreateNode(int level, struct rte_timer *tim)
 {
 	int size;
 	skiplistNode *node=NULL;
+
 	size = sizeof(skiplistNode)+level*sizeof(skiplistNode *);
 	node=malloc(size);
 	if(NULL==node){
@@ -73,14 +74,9 @@ static int slRandomLevel(void)
 	return (level<SKIPLIST_MAXLEVEL)?level:SKIPLIST_MAXLEVEL;
 }
 
-static int cmp_node(struct rte_timer *orig, struct rte_timer *new)
+static inline int cmp_node(struct rte_timer *orig, struct rte_timer *new)
 {
-	return (orig->expire < new->expire);
-}
-
-static int is_equal_node(struct rte_timer *orig, struct rte_timer *new)
-{
-	return (orig->expire == new->expire);
+	return orig->expire<new->expire;
 }
 
 static skiplistNode *slInsert(skiplist *sl, struct rte_timer *tim)
@@ -90,6 +86,7 @@ static skiplistNode *slInsert(skiplist *sl, struct rte_timer *tim)
 	int i, level;
 
 	node = sl->header;
+	/* 从最高层次开始搜索，查找插入的位置。update数组用于记录各层次的插入点 */
 	for(i=sl->level-1; i>=0; i--){
 		while(node->forward[i] &&
 				cmp_node(node->forward[i]->tim, tim)){
@@ -98,6 +95,7 @@ static skiplistNode *slInsert(skiplist *sl, struct rte_timer *tim)
 		update[i]=node;
 	}
 
+	/* 完全随机决定本次插入的元素所占的层数 */
 	level = slRandomLevel();
 	if(level>sl->level){
 		for(i=sl->level;i<level;i++){
@@ -106,6 +104,7 @@ static skiplistNode *slInsert(skiplist *sl, struct rte_timer *tim)
 		sl->level = level;
 	}
 	node = slCreateNode(level, tim);
+	/* 分别在每一层执行链表插入动作 */
 	for(i=0; i<level; i++){
 		node->forward[i] = update[i]->forward[i];
 		update[i]->forward[i] = node;
@@ -113,22 +112,6 @@ static skiplistNode *slInsert(skiplist *sl, struct rte_timer *tim)
 
 	sl->length++;
 	return node;
-}
-
-static void slDeleteNode(skiplist *sl, skiplistNode *node, skiplistNode **update)
-{
-	int i;
-	for(i=0; i<sl->level; i++){
-		if(update[i]->forward[i]==node){
-			update[i]->forward[i]=node->forward[i];
-		}
-	}
-	while(sl->level>1 && sl->header->forward[sl->level-1]==NULL){
-		sl->level--;
-	}
-	sl->length--;
-
-	return;
 }
 
 static int slDelete(skiplist *sl, struct rte_timer *tim)
@@ -139,17 +122,27 @@ static int slDelete(skiplist *sl, struct rte_timer *tim)
 
 	node = sl->header;
 	for(i=sl->level-1; i>=0; i--){
-		while(node->forward[i] && cmp_node(node->forward[i]->tim, tim)){
+		while(node->forward[i] &&
+				cmp_node(node->forward[i]->tim, tim)){
 			node = node->forward[i];
 		}
 		update[i] = node;
 	}
 
 	node = node->forward[0];
-	if(node && is_equal_node(tim, node->tim)){
-		slDeleteNode(sl, node, update);
+	if(node && (tim==node->tim)){
+		tim->flags &= ~RTE_TIMER_ADDED;
+		/* 在各层次执行链表删除动作 */
+		for(i=0; i<sl->level; i++){
+			if(update[i]->forward[i]==node){
+				update[i]->forward[i]=node->forward[i];
+			}
+		}
+		while(sl->level>1 && sl->header->forward[sl->level-1]==NULL){
+			sl->level--;
+		}
+		sl->length--;
 		free(node);
-		return 1;
 	}
 
 	return 0;
@@ -185,8 +178,8 @@ int add_skiplist_timer(struct rte_timer *tim, uint32_t expire)
 		return -1;
 	}
 
-	// tim->expire = rte_get_cur_time() + expire;
-	tim->expire = expire;
+	tim->expire = rte_get_cur_time() + expire;
+	// tim->expire = expire;
 	slInsert(sl, tim);
 	tim->flags |= RTE_TIMER_ADDED;
 
@@ -209,6 +202,7 @@ int del_skiplist_timer(struct rte_timer *tim)
 
 int modify_skiplist_timer(struct rte_timer *tim, uint32_t expire)
 {
+	// TODO
 	return 0;
 }
 
@@ -216,7 +210,18 @@ void skiplist_timer_manage(void)
 {
 	uint32_t thread_idx = rte_get_thread_id();
 	skiplist *sl = global_skiplist[thread_idx];
+	skiplistNode *node=NULL;
+	struct rte_timer *tim=NULL;
+	uint64_t cur_usec = rte_get_cur_time();
 
+	while((node=sl->header->forward[0])!=NULL){
+		tim = node->tim;
+		if(cur_usec<tim->expire){
+			break;
+		}
+		slDelete(sl, tim);
+		tim->func(tim);
+	}
 	return;
 }
 
