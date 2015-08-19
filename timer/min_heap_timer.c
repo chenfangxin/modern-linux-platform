@@ -78,7 +78,7 @@ static void min_heap_shift_down(min_heap_t *s, uint32_t hole_index, struct rte_t
 {
 	uint32_t min_child = 2 * (hole_index + 1); /* hole_index的右子节点 */
 	while(min_child <= s->n){
-		min_child -= (min_child == s->n || min_heap_elem_greater(s->p[min_child], s->p[min_child - 1])); /* 左子节点 */
+		min_child -= (min_child == s->n || min_heap_elem_greater(s->p[min_child], s->p[min_child - 1])); /* 切换到左子节点 */
 		if(!min_heap_elem_greater(tim, s->p[min_child])){
 			break;
 		}
