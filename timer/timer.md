@@ -8,13 +8,13 @@
 	用timerfd实现超时处理，可以用在select/poll/epoll中统一处理。
 
 ## wheel timer
-    基于timing wheel模型实现的定时器
+    基于timing wheel模型实现的定时器, Linux内核中的timer由此模型实现。
 
 ## min heap timer
-    用最小堆实现的定时器
+    用最小堆实现的定时器，Libevent库中的timer有此模型实现。
 
 ## rbtree timer
-	用红黑树实现的定时器
+	用红黑树实现的定时器，Linux内核中的hrtimer，Nginx中的timer由此模型实现。
 
 ## skiplist timer
     用skiplist实现的定时器

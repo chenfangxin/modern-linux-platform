@@ -26,6 +26,16 @@ int add_rbtree_timer(struct rte_timer *tim, uint32_t expire)
 	struct rte_timer *entry=NULL;
 	int leftmost=1;
 
+	if(!(tim->flags & RTE_TIMER_INITED)){
+		return -1;
+	}
+
+	if(tim->flags & RTE_TIMER_ADDED){
+		return -1;
+	}
+
+	tim->expire = rte_get_cur_time() + expire;
+	// tim->expire = expire;
 	while(*link){
 		parent = *link;
 		entry = rb_entry(parent, struct rte_timer, node);
@@ -68,5 +78,19 @@ int modify_rbtree_timer(struct rte_timer *tim, uint32_t expire)
 
 void rbtree_timer_manage(void)
 {
+	uint32_t thread_idx = rte_get_thread_id();
+	struct rbtree_timer_base *base=global_rbt_base + thread_idx;
+	uint64_t cur_usec = rte_get_cur_time();
+	struct rb_node *node;
+	struct rte_timer *tim;
+
+	while((node=base->first)){
+		tim = rb_entry(node, struct rte_timer, node);
+		if(cur_usec<tim->expire){
+			break;
+		}
+		del_rbtree_timer(tim);
+		tim->func(tim);
+	}
 	return;
 }

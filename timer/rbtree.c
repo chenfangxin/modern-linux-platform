@@ -70,34 +70,51 @@ static void rb_rotate_right(struct rb_node *node, struct rb_root *root)
 	return;
 }
 
+#define rb_swap_node(na, nb) 	\
+		do{						\
+			register void *tmp;	\
+			tmp = na;			\
+			na = nb;			\
+			nb = tmp;			\
+		}while(0);
+
+/*
+ * 插入一个节点
+ * 三种情况下需要对红黑树做调整：
+ * 1）当前节点的父节点是红色，且叔节点是红色时
+ * 2）当前节点的父节点是红色，叔节点是黑色，当前节点为右子节点时
+ * 3）当前节点的父节点是红色，叔节点是黑色，当前节点为左子节点时
+ * */
 void rb_insert_color(struct rb_node *node, struct rb_root *root)
 {
 	struct rb_node *parent, *gparent;
-	while((parent=rb_parent(node))&&rb_is_red(parent)){
+	/* 当前节点的父节点是红色 */
+	while((parent=rb_parent(node)) && rb_is_red(parent)){
 		gparent = rb_parent(parent);
 		if(parent==gparent->rb_left){
 			{
+				/* 叔节点(祖父节点的另一个子节点)是红色 */
 				register struct rb_node *uncle = gparent->rb_right;
 				if(uncle && rb_is_red(uncle)){
-					rb_set_black(uncle);
-					rb_set_black(parent);
-					rb_set_red(gparent);
-					node = gparent;
+					rb_set_black(uncle); // 叔节点涂黑
+					rb_set_black(parent); // 父节点涂黑
+					rb_set_red(gparent); // 祖父节点涂红
+					node = gparent; // 当前节点指向祖父节点，并从新的位置重新执行算法
 					continue;
 				}
 			}
+
+			/* 叔节点是黑色，且当前节点为父节点的右子节点 */
 			if(parent->rb_right==node){
-				register struct rb_node *tmp;
-				rb_rotate_left(parent, root);
-				tmp = parent;
-				parent = node;
-				node = tmp;
+				rb_rotate_left(parent, root); //
+				rb_swap_node(parent, node)
 			}
 			rb_set_black(parent);
 			rb_set_red(gparent);
 			rb_rotate_right(gparent, root);
 		}else{
 			{
+				/* 叔节点(祖父节点的另一个子节点)是红色 */
 				register struct rb_node *uncle = gparent->rb_left;
 				if(uncle && rb_is_red(uncle)){
 					rb_set_black(uncle);
@@ -107,12 +124,11 @@ void rb_insert_color(struct rb_node *node, struct rb_root *root)
 					continue;
 				}
 			}
+
+			/* 叔节点是黑色，且当前节点为父节点的左子节点 */
 			if(parent->rb_left==node){
-				register struct rb_node *tmp;
 				rb_rotate_right(parent, root);
-				tmp = parent;
-				parent = node;
-				node = tmp;
+				rb_swap_node(parent, node);
 			}
 			rb_set_black(parent);
 			rb_set_red(gparent);
@@ -189,6 +205,9 @@ static void rb_erase_color(struct rb_node *node, struct rb_node *parent, struct 
 	return;
 }
 
+/*
+ * 删除一个节点
+ * */
 void rb_erase(struct rb_node *node, struct rb_root *root)
 {
 	struct rb_node *child, *parent;	

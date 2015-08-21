@@ -25,6 +25,7 @@ static inline void rb_link_node(struct rb_node *node, struct rb_node *parent, st
 	node->rb_left = node->rb_right = NULL;
 	*rb_link = node;
 }
+
 struct rb_node *rb_first(const struct rb_root *root);
 struct rb_node *rb_last(const struct rb_root *root);
 struct rb_node *rb_next(const struct rb_node *node);
