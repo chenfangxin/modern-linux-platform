@@ -23,7 +23,7 @@ static inline void rb_set_color(struct rb_node *rb, int color)
 
 /*
  * 左旋
- *   以node及其右子节点Y之间的连接为轴，逆时针旋转。使得node的右子节点Y成为子树新的根节点，而node成为Y的左子节点，Y原来的左子节点成为node的右子节点。
+ *   以node及其右子节点Y之间的连接为轴，逆时针旋转。使得Y成为子树的新根节点，而node成为Y的左子节点，Y原来的左子节点成为node的右子节点。
  * */
 static void rb_rotate_left(struct rb_node *node, struct rb_root *root)
 {
@@ -51,7 +51,7 @@ static void rb_rotate_left(struct rb_node *node, struct rb_root *root)
 
 /*
  * 右旋
- *   以node及其左子节点Y之间的连接为轴，顺时针旋转。使得Y成为子树的新根节点，node成为Y的右子节点，Y原来的右子节点成为node的左子节点。
+ *   以node及其左子节点Y之间的连接为轴，顺时针旋转。使得Y成为子树的新根节点，而node成为Y的右子节点，Y原来的右子节点成为node的左子节点。
  * */
 static void rb_rotate_right(struct rb_node *node, struct rb_root *root)
 {
