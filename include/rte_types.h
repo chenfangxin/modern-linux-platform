@@ -17,4 +17,7 @@ typedef unsigned long  uint64_t;
 		 1;	\
 		 })
 
+#define container_of(ptr, type, member) \
+		((type *)((char *)(ptr)-(unsigned long)(&((type *)0)->member)))
+
 #endif

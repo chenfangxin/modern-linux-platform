@@ -1,6 +1,12 @@
 #ifndef __RBTREE_TIMER_H__
 #define __RBTREE_TIMER_H__
+#include "rte_types.h"
 #include "rte_timer.h"
+
+struct rbtree_timer_base{
+	struct rb_root active;
+	struct rb_node *first;
+};
 
 int rbtree_timer_system_init(void);
 
