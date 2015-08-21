@@ -138,6 +138,13 @@ void rb_insert_color(struct rb_node *node, struct rb_root *root)
 	rb_set_black(root->rb_node);
 }
 
+/*
+ * 删除时需要调整的情况：
+ * 1） 当前节点是黑色，兄弟节点是红色
+ * 2） 当前节点是黑色，兄弟节点是黑色且兄弟节点的两个子节点也为黑色
+ * 3） 当前节点是黑色，兄弟节点是黑色，兄弟节点的右子节点为黑色，左子节点为红色
+ * 4） 当前节点是黑色，兄弟节点是黑色，兄弟节点的右子节点为红色，左子节点任意
+ * */
 static void rb_erase_color(struct rb_node *node, struct rb_node *parent, struct rb_root *root)
 {
 	struct rb_node *other;
