@@ -6,8 +6,8 @@
 
 typedef struct skiplistNode{
 	void *obj;
-	struct skiplistNode *forward[0]; // Level
 	int width;  // For indexable
+	struct skiplistNode *forward[0]; // Level
 }skiplistNode;
 
 typedef int (*cmp_func_t)(void *, void *);
@@ -21,5 +21,5 @@ typedef struct skiplist{
 skiplist *slCreate(cmp_func_t cmp);
 skiplistNode *slInsert(skiplist *sl, void *obj);
 int slDelete(skiplist *sl, void *obj);
-
+void *lookup_by_index(skiplist *sl, int pos);
 #endif
