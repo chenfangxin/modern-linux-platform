@@ -92,6 +92,7 @@ skiplistNode *slInsert(skiplist *sl, void *obj)
 	}
 
 	sl->length++;
+
 	return node;
 }
 
@@ -127,11 +128,3 @@ int slDelete(skiplist *sl, void *obj)
 
 	return 0;
 }
-
-void *lookup_by_index(skiplist *sl, int pos)
-{
-	// TODO
-
-	return NULL;
-}
-
