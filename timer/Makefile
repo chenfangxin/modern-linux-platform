@@ -1,8 +1,9 @@
 TARGETS := timer
 
 target_OBJECTS = timer.o rte_timer.o wheel_timer.o \
-				 min_heap_timer.o rbtree_timer.o rbtree.o\
-				 skiplist_timer.o
+				 min_heap_timer.o \
+				 rbtree_timer.o rbtree.o\
+				 skiplist_timer.o skiplist.o
 
 CFLAGS = -g -Wall -rdynamic
 CC = gcc
@@ -36,6 +37,9 @@ rbtree.o: rbtree.c rbtree.h
 	$(COMPILE) -c -o $@ $<
 
 skiplist_timer.o: skiplist_timer.c skiplist_timer.h
+	$(COMPILE) -c -o $@ $<
+
+skiplist.o: skiplist.c skiplist.h
 	$(COMPILE) -c -o $@ $<
 
 clean:

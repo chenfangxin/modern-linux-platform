@@ -33,7 +33,7 @@ int main(void)
 	struct rte_timer *del_tim=NULL;
 
 	rte_timer_system_init();
-#if 1
+#if 0
 	tim = (struct rte_timer *)malloc(sizeof(struct rte_timer));
 	if(NULL==tim){
 		return -1;
@@ -79,7 +79,7 @@ int main(void)
 
 	rte_del_timer(del_tim);
 #endif
-#if 0
+#if 1
 	tim = (struct rte_timer *)malloc(sizeof(struct rte_timer));
 	if(NULL==tim){
 		return -1;

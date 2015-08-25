@@ -9,8 +9,8 @@
 
 // #define RTE_WHEEL_TIMER
 // #define RTE_MIN_HEAP_TIMER
-#define RTE_RBTREE_TIMER
-// #define RTE_SKIPLIST_TIMER
+// #define RTE_RBTREE_TIMER
+#define RTE_SKIPLIST_TIMER
 
 uint64_t rte_get_cur_time(void)
 {
