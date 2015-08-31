@@ -20,9 +20,9 @@ int next(coroutine *c)
 	int ret = setjmp(c->caller_context);
 	if(!ret){
 		longjmp(c->callee_context, 1);
-	}else{
-		return ret==WORKING;
 	}
+
+	return ret==WORKING;
 }
 
 typedef struct{
@@ -64,5 +64,5 @@ void start(coroutine *c, func f, void *arg, void *sp)
 	(*p->f)(p->arg);
 	longjmp(p->c->caller_context, DONE);
 
-
+	return;
 }
