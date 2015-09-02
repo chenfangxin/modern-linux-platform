@@ -26,7 +26,7 @@ int main(void)
 {
 	coroutine c;	
 	int stack[N];
-	iter it={&c, 2, 2};
+	iter it={&c, 2, 10};
 	start(&c, &iterate, &it, stack+N);
 	while(next(&c)){
 		printf("%d %d\n", it.x, it.y);
