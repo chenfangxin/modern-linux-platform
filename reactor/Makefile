@@ -4,16 +4,19 @@ CFLAGS += -fPIC -Wall -Wunused-function -Wextra
 INCLUDES= -I.
 LIBS=-lpthread -lm
 
-LIB=libev.so
+TARGET=demo libev.so
 
-all: $(LIB)
+all: $(TARGET)
 LIBOBJS=ev.o event.o
 
 %.o: %.c
 	$(CC) $(CFLAGS) $(INCLUDES) -c $<
 
-$(LIB):$(LIBOBJS)
+libev.so:$(LIBOBJS)
 	$(CC) $(LIBS) -shared -o $@ $^
 
+demo: demo.o
+	$(CC) $(LIBS) -lev -shared -o $@ $^
+
 clean:
-	-@rm -rf $(LIB) *.o
+	-@rm -rf $(TARGET) *.o
