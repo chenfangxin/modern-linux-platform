@@ -1,59 +1,11 @@
-/*
- * libevent compatibility layer
- *
- * Copyright (c) 2007,2008,2009,2010,2012 Marc Alexander Lehmann <libev@schmorp.de>
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without modifica-
- * tion, are permitted provided that the following conditions are met:
- *
- *   1.  Redistributions of source code must retain the above copyright notice,
- *       this list of conditions and the following disclaimer.
- *
- *   2.  Redistributions in binary form must reproduce the above copyright
- *       notice, this list of conditions and the following disclaimer in the
- *       documentation and/or other materials provided with the distribution.
- *
- * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR IMPLIED
- * WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MER-
- * CHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO
- * EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPE-
- * CIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
- * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
- * OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
- * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTH-
- * ERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
- * OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Alternatively, the contents of this file may be used under the terms of
- * the GNU General Public License ("GPL") version 2 or any later version,
- * in which case the provisions of the GPL are applicable instead of
- * the above. If you wish to allow the use of your version of this file
- * only under the terms of the GPL and not to allow others to use your
- * version of this file under the BSD license, indicate your decision
- * by deleting the provisions above and replace them with the notice
- * and other provisions required by the GPL. If you do not delete the
- * provisions above, a recipient may use your version of this file under
- * either the BSD or the GPL.
- */
-
 #include <stddef.h>
 #include <stdlib.h>
 #include <assert.h>
 
-#ifdef EV_EVENT_H
-# include EV_EVENT_H
-#else
 # include "event.h"
-#endif
 
-#if EV_MULTIPLICITY
 # define dLOOPev struct ev_loop *loop = (struct ev_loop *)ev->ev_base
 # define dLOOPbase struct ev_loop *loop = (struct ev_loop *)base
-#else
-# define dLOOPev
-# define dLOOPbase
-#endif
 
 /* never accessed, will always be cast from/to ev_loop */
 struct event_base
@@ -93,16 +45,10 @@ event_get_method (void)
 
 void *event_init (void)
 {
-#if EV_MULTIPLICITY
   if (ev_x_cur)
     ev_x_cur = (struct event_base *)ev_loop_new (EVFLAG_AUTO);
   else
     ev_x_cur = (struct event_base *)ev_default_loop (EVFLAG_AUTO);
-#else
-  assert (("libev: multiple event bases not supported when not compiled with EV_MULTIPLICITY", !ev_x_cur));
-
-  ev_x_cur = (struct event_base *)(long)ev_default_loop (EVFLAG_AUTO);
-#endif
 
   return ev_x_cur;
 }
@@ -116,22 +62,15 @@ event_base_get_method (const struct event_base *base)
 struct event_base *
 event_base_new (void)
 {
-#if EV_MULTIPLICITY
   return (struct event_base *)ev_loop_new (EVFLAG_AUTO);
-#else
-  assert (("libev: multiple event bases not supported when not compiled with EV_MULTIPLICITY"));
-  return NULL;
-#endif
 }
 
 void event_base_free (struct event_base *base)
 {
   dLOOPbase;
 
-#if EV_MULTIPLICITY
   if (!ev_is_default_loop (loop))
     ev_loop_destroy (loop);
-#endif
 }
 
 int event_dispatch (void)
@@ -172,7 +111,7 @@ ev_x_cb (struct event *ev, int revents)
 }
 
 static void
-ev_x_cb_sig (EV_P_ struct ev_signal *w, int revents)
+ev_x_cb_sig (struct ev_loop *loop, struct ev_signal *w, int revents)
 {
   struct event *ev = (struct event *)(((char *)w) - offsetof (struct event, iosig.sig));
 
@@ -183,7 +122,7 @@ ev_x_cb_sig (EV_P_ struct ev_signal *w, int revents)
 }
 
 static void
-ev_x_cb_io (EV_P_ struct ev_io *w, int revents)
+ev_x_cb_io (struct ev_loop *loop, struct ev_io *w, int revents)
 {
   struct event *ev = (struct event *)(((char *)w) - offsetof (struct event, iosig.io));
 
@@ -194,7 +133,7 @@ ev_x_cb_io (EV_P_ struct ev_io *w, int revents)
 }
 
 static void
-ev_x_cb_to (EV_P_ struct ev_timer *w, int revents)
+ev_x_cb_to (struct ev_loop *loop, struct ev_timer *w, int revents)
 {
   struct event *ev = (struct event *)(((char *)w) - offsetof (struct event, to));
 
@@ -236,7 +175,7 @@ int event_add (struct event *ev, struct timeval *tv)
       if (!ev_is_active (&ev->iosig.sig))
         {
           ev_signal_set (&ev->iosig.sig, ev->ev_fd);
-          ev_signal_start (EV_A_ &ev->iosig.sig);
+          ev_signal_start (loop, &ev->iosig.sig);
 
           ev->ev_flags |= EVLIST_SIGNAL;
         }
@@ -246,7 +185,7 @@ int event_add (struct event *ev, struct timeval *tv)
       if (!ev_is_active (&ev->iosig.io))
         {
           ev_io_set (&ev->iosig.io, ev->ev_fd, ev->ev_events & (EV_READ | EV_WRITE));
-          ev_io_start (EV_A_ &ev->iosig.io);
+          ev_io_start (loop, &ev->iosig.io);
 
           ev->ev_flags |= EVLIST_INSERTED;
         }
@@ -255,12 +194,12 @@ int event_add (struct event *ev, struct timeval *tv)
   if (tv)
     {
       ev->to.repeat = ev_tv_get (tv);
-      ev_timer_again (EV_A_ &ev->to);
+      ev_timer_again (loop, &ev->to);
       ev->ev_flags |= EVLIST_TIMEOUT;
     }
   else
     {
-      ev_timer_stop (EV_A_ &ev->to);
+      ev_timer_stop (loop, &ev->to);
       ev->ev_flags &= ~EVLIST_TIMEOUT;
     }
 
@@ -274,12 +213,12 @@ int event_del (struct event *ev)
   dLOOPev;
 
   if (ev->ev_events & EV_SIGNAL)
-    ev_signal_stop (EV_A_ &ev->iosig.sig);
+    ev_signal_stop (loop, &ev->iosig.sig);
   else if (ev->ev_events & (EV_READ | EV_WRITE))
-    ev_io_stop (EV_A_ &ev->iosig.io);
+    ev_io_stop (loop, &ev->iosig.io);
 
   if (ev_is_active (&ev->to))
-    ev_timer_stop (EV_A_ &ev->to);
+    ev_timer_stop (loop, &ev->to);
 
   ev->ev_flags = EVLIST_INIT;
 
@@ -291,13 +230,13 @@ void event_active (struct event *ev, int res, short ncalls)
   dLOOPev;
 
   if (res & EV_TIMEOUT)
-    ev_feed_event (EV_A_ &ev->to, res & EV_TIMEOUT);
+    ev_feed_event (loop, &ev->to, res & EV_TIMEOUT);
 
   if (res & EV_SIGNAL)
-    ev_feed_event (EV_A_ &ev->iosig.sig, res & EV_SIGNAL);
+    ev_feed_event (loop, &ev->iosig.sig, res & EV_SIGNAL);
 
   if (res & (EV_READ | EV_WRITE))
-    ev_feed_event (EV_A_ &ev->iosig.io, res & (EV_READ | EV_WRITE));
+    ev_feed_event (loop, &ev->iosig.io, res & (EV_READ | EV_WRITE));
 }
 
 int event_pending (struct event *ev, short events, struct timeval *tv)
@@ -324,7 +263,7 @@ int event_pending (struct event *ev, short events, struct timeval *tv)
 
       if (tv)
         {
-          ev_tstamp at = ev_now (EV_A);
+          ev_tstamp at = ev_now (loop);
 
           tv->tv_sec  = (long)at;
           tv->tv_usec = (long)((at - (ev_tstamp)tv->tv_sec) * 1e6);
@@ -357,7 +296,7 @@ int event_base_loop (struct event_base *base, int flags)
 {
   dLOOPbase;
 
-  return !ev_run (EV_A_ flags);
+  return !ev_run (loop, flags);
 }
 
 int event_base_dispatch (struct event_base *base)
@@ -371,7 +310,7 @@ ev_x_loopexit_cb (int revents, void *base)
   dLOOPbase;
   revents=revents;
   base=base;
-  ev_break (EV_A_ EVBREAK_ONE);
+  ev_break (loop, EVBREAK_ONE);
 }
 
 int event_base_loopexit (struct event_base *base, struct timeval *tv)
@@ -379,7 +318,7 @@ int event_base_loopexit (struct event_base *base, struct timeval *tv)
   ev_tstamp after = ev_tv_get (tv);
   dLOOPbase;
 
-  ev_once (EV_A_ -1, 0, after >= 0. ? after : 0., ev_x_loopexit_cb, (void *)base);
+  ev_once (loop, -1, 0, after >= 0. ? after : 0., ev_x_loopexit_cb, (void *)base);
 
   return 0;
 }
@@ -412,7 +351,7 @@ int event_base_once (struct event_base *base, int fd, short events, void (*cb)(i
   once->cb  = cb;
   once->arg = arg;
 
-  ev_once (EV_A_ fd, events & (EV_READ | EV_WRITE), ev_tv_get (tv), ev_x_once_cb, (void *)once);
+  ev_once (loop, fd, events & (EV_READ | EV_WRITE), ev_tv_get (tv), ev_x_once_cb, (void *)once);
 
   return 0;
 }

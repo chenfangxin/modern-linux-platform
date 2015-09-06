@@ -1,43 +1,4 @@
 /*
- * libev epoll fd activity backend
- *
- * Copyright (c) 2007,2008,2009,2010,2011 Marc Alexander Lehmann <libev@schmorp.de>
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without modifica-
- * tion, are permitted provided that the following conditions are met:
- *
- *   1.  Redistributions of source code must retain the above copyright notice,
- *       this list of conditions and the following disclaimer.
- *
- *   2.  Redistributions in binary form must reproduce the above copyright
- *       notice, this list of conditions and the following disclaimer in the
- *       documentation and/or other materials provided with the distribution.
- *
- * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR IMPLIED
- * WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MER-
- * CHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO
- * EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPE-
- * CIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
- * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
- * OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
- * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTH-
- * ERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
- * OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Alternatively, the contents of this file may be used under the terms of
- * the GNU General Public License ("GPL") version 2 or any later version,
- * in which case the provisions of the GPL are applicable instead of
- * the above. If you wish to allow the use of your version of this file
- * only under the terms of the GPL and not to allow others to use your
- * version of this file under the BSD license, indicate your decision
- * by deleting the provisions above and replace them with the notice
- * and other provisions required by the GPL. If you do not delete the
- * provisions above, a recipient may use your version of this file under
- * either the BSD or the GPL.
- */
-
-/*
  * general notes about epoll:
  *
  * a) epoll silently removes fds from the fd set. as nothing tells us
@@ -68,7 +29,7 @@
 #define EV_EMASK_EPERM 0x80
 
 static void
-epoll_modify (EV_P_ int fd, int oev, int nev)
+epoll_modify (struct ev_loop *loop, int fd, int oev, int nev)
 {
   struct epoll_event ev;
   unsigned char oldmask;
@@ -131,7 +92,7 @@ epoll_modify (EV_P_ int fd, int oev, int nev)
       return;
     }
 
-  fd_kill (EV_A_ fd);
+  fd_kill (loop, fd);
 
 dec_egen:
   /* we didn't successfully call epoll_ctl, so decrement the generation counter again */
@@ -139,7 +100,7 @@ dec_egen:
 }
 
 static void
-epoll_poll (EV_P_ ev_tstamp timeout)
+epoll_poll (struct ev_loop *loop, ev_tstamp timeout)
 {
   int i;
   int eventcnt;
@@ -208,7 +169,7 @@ epoll_poll (EV_P_ ev_tstamp timeout)
             }
         }
 
-      fd_event (EV_A_ fd, got);
+      fd_event (loop, fd, got);
     }
 
   /* if the receive array was full, increase its size */
@@ -226,7 +187,7 @@ epoll_poll (EV_P_ ev_tstamp timeout)
       unsigned char events = anfds [fd].events & (EV_READ | EV_WRITE);
 
       if (anfds [fd].emask & EV_EMASK_EPERM && events)
-        fd_event (EV_A_ fd, events);
+        fd_event (loop, fd, events);
       else
         {
           epoll_eperms [i] = epoll_eperms [--epoll_epermcnt];
@@ -235,8 +196,7 @@ epoll_poll (EV_P_ ev_tstamp timeout)
     }
 }
 
-int inline_size
-epoll_init (EV_P_ int flags)
+static int epoll_init (struct ev_loop *loop, int flags)
 {
 #ifdef EPOLL_CLOEXEC
   backend_fd = epoll_create1 (EPOLL_CLOEXEC);
@@ -260,15 +220,13 @@ epoll_init (EV_P_ int flags)
   return EVBACKEND_EPOLL;
 }
 
-void inline_size
-epoll_destroy (EV_P)
+static void epoll_destroy (struct ev_loop *loop)
 {
   ev_free (epoll_events);
   array_free (epoll_eperm, EMPTY);
 }
 
-void inline_size
-epoll_fork (EV_P)
+static void epoll_fork (struct ev_loop *loop)
 {
   close (backend_fd);
 
@@ -277,6 +235,6 @@ epoll_fork (EV_P)
 
   fcntl (backend_fd, F_SETFD, FD_CLOEXEC);
 
-  fd_rearm_all (EV_A);
+  fd_rearm_all (loop);
 }
 

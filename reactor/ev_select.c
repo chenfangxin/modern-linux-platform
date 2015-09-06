@@ -1,42 +1,3 @@
-/*
- * libev select fd activity backend
- *
- * Copyright (c) 2007,2008,2009,2010,2011 Marc Alexander Lehmann <libev@schmorp.de>
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without modifica-
- * tion, are permitted provided that the following conditions are met:
- *
- *   1.  Redistributions of source code must retain the above copyright notice,
- *       this list of conditions and the following disclaimer.
- *
- *   2.  Redistributions in binary form must reproduce the above copyright
- *       notice, this list of conditions and the following disclaimer in the
- *       documentation and/or other materials provided with the distribution.
- *
- * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR IMPLIED
- * WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MER-
- * CHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO
- * EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPE-
- * CIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
- * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
- * OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
- * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTH-
- * ERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
- * OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Alternatively, the contents of this file may be used under the terms of
- * the GNU General Public License ("GPL") version 2 or any later version,
- * in which case the provisions of the GPL are applicable instead of
- * the above. If you wish to allow the use of your version of this file
- * only under the terms of the GPL and not to allow others to use your
- * version of this file under the BSD license, indicate your decision
- * by deleting the provisions above and replace them with the notice
- * and other provisions required by the GPL. If you do not delete the
- * provisions above, a recipient may use your version of this file under
- * either the BSD or the GPL.
- */
-
 /* for unix systems */
 # include <inttypes.h>
 #  include <sys/select.h>
@@ -56,7 +17,7 @@
 #include <string.h>
 
 static void
-select_modify (EV_P_ int fd, int oev, int nev)
+select_modify (struct ev_loop *loop, int fd, int oev, int nev)
 {
   if (oev == nev)
     return;
@@ -112,7 +73,7 @@ select_modify (EV_P_ int fd, int oev, int nev)
 }
 
 static void
-select_poll (EV_P_ ev_tstamp timeout)
+select_poll (struct ev_loop *loop, ev_tstamp timeout)
 {
   struct timeval tv;
   int res;
@@ -150,9 +111,9 @@ select_poll (EV_P_ ev_tstamp timeout)
       #endif
 
       if (errno == EBADF)
-        fd_ebadf (EV_A);
+        fd_ebadf (loop);
       else if (errno == ENOMEM && !syserr_cb)
-        fd_enomem (EV_A);
+        fd_enomem (loop);
       else if (errno != EINTR)
         ev_syserr ("(libev) select");
 
@@ -174,7 +135,7 @@ select_poll (EV_P_ ev_tstamp timeout)
           if (FD_ISSET (handle, (fd_set *)vec_wo)) events |= EV_WRITE;
 
           if (expect_true (events))
-            fd_event (EV_A_ fd, events);
+            fd_event (loop, fd, events);
         }
   }
 
@@ -197,7 +158,7 @@ select_poll (EV_P_ ev_tstamp timeout)
               events |= word_w & mask ? EV_WRITE : 0;
 
               if (expect_true (events))
-                fd_event (EV_A_ word * NFDBITS + bit, events);
+                fd_event (loop, word * NFDBITS + bit, events);
             }
       }
   }
@@ -205,8 +166,7 @@ select_poll (EV_P_ ev_tstamp timeout)
 #endif
 }
 
-int inline_size
-select_init (EV_P_ int flags)
+static int select_init (struct ev_loop *loop, int flags)
 {
   backend_mintime = 1e-6;
   backend_modify  = select_modify;
@@ -228,8 +188,7 @@ select_init (EV_P_ int flags)
   return EVBACKEND_SELECT;
 }
 
-void inline_size
-select_destroy (EV_P)
+static void select_destroy (struct ev_loop *loop)
 {
   ev_free (vec_ri);
   ev_free (vec_ro);

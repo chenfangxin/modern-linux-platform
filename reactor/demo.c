@@ -1,3 +1,6 @@
+/*
+ * 模仿memcached的架构，展示libev的用法
+ * */
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -5,6 +8,7 @@
 #include <sys/types.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
+#include <arpa/inet.h>
 #include <pthread.h>
 #include <ev.h>
 #define MAXLEN 1023
@@ -150,7 +154,7 @@ static void create_worker(void *(*func)(void *), void *arg)
 	}
 }
 
-static void async_cb(EV_P_ ev_async *w, int revents)
+static void async_cb(struct ev_loop *loop, ev_async *w, int revents)
 {
 	CQ_ITEM *item;
 	item = cq_pop(((WORK_THREAD *)(w->data))->new_conn_queue);

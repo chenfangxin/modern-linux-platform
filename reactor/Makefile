@@ -1,10 +1,15 @@
 CC=gcc
 CFLAGS = -g
-CFLAGS += -fPIC -Wall -Wunused-function -Wextra
+# CFLAGS += -fPIC -Wall -Wunused-function -Wextra
+CFLAGS += -fPIC -Wunused-function -Wextra
 INCLUDES= -I.
+LIBS_INCLUDE = -L./
 LIBS=-lpthread -lm
 
-TARGET=demo libev.so
+COMPILE = $(CC) $(CFLAGS) $(INCLUDES)
+LINK = $(COMPILE) -o $@
+
+TARGET=libev.so demo
 
 all: $(TARGET)
 LIBOBJS=ev.o event.o
@@ -16,7 +21,7 @@ libev.so:$(LIBOBJS)
 	$(CC) $(LIBS) -shared -o $@ $^
 
 demo: demo.o
-	$(CC) $(LIBS) -lev -shared -o $@ $^
+	$(LINK) demo.o $(LIBS) $(LIBS_INCLUDE) -lev
 
 clean:
 	-@rm -rf $(TARGET) *.o

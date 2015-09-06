@@ -4,3 +4,5 @@
 
 ## libev
   libev是一个功能强大的reactor实现，在Linux平台上支持select/poll/epoll。
+
+本示例简化代码，只支持x86_64平台，Linux系统，GCC>=4.9
