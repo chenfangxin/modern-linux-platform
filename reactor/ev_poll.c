@@ -44,8 +44,7 @@ static void poll_modify (struct ev_loop *loop, int fd, int oev, int nev)
     }
 }
 
-static void
-poll_poll (struct ev_loop *loop, ev_tstamp timeout)
+static void poll_poll (struct ev_loop *loop, ev_tstamp timeout)
 {
   struct pollfd *p;
   int res;

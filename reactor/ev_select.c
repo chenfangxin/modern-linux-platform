@@ -16,8 +16,7 @@
 
 #include <string.h>
 
-static void
-select_modify (struct ev_loop *loop, int fd, int oev, int nev)
+static void select_modify (struct ev_loop *loop, int fd, int oev, int nev)
 {
   if (oev == nev)
     return;
@@ -72,8 +71,7 @@ select_modify (struct ev_loop *loop, int fd, int oev, int nev)
   }
 }
 
-static void
-select_poll (struct ev_loop *loop, ev_tstamp timeout)
+static void select_poll (struct ev_loop *loop, ev_tstamp timeout)
 {
   struct timeval tv;
   int res;

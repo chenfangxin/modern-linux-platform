@@ -28,8 +28,7 @@
 
 #define EV_EMASK_EPERM 0x80
 
-static void
-epoll_modify (struct ev_loop *loop, int fd, int oev, int nev)
+static void epoll_modify (struct ev_loop *loop, int fd, int oev, int nev)
 {
   struct epoll_event ev;
   unsigned char oldmask;
@@ -99,8 +98,7 @@ dec_egen:
   --anfds [fd].egen;
 }
 
-static void
-epoll_poll (struct ev_loop *loop, ev_tstamp timeout)
+static void epoll_poll (struct ev_loop *loop, ev_tstamp timeout)
 {
   int i;
   int eventcnt;
@@ -230,8 +228,9 @@ static void epoll_fork (struct ev_loop *loop)
 {
   close (backend_fd);
 
-  while ((backend_fd = epoll_create (256)) < 0)
+  while ((backend_fd = epoll_create (256)) < 0){
     ev_syserr ("(libev) epoll_create");
+  }
 
   fcntl (backend_fd, F_SETFD, FD_CLOEXEC);
 
