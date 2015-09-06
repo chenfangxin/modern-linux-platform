@@ -73,10 +73,6 @@
 # define EV_EMBED_ENABLE EV_FEATURE_WATCHERS
 #endif
 
-#ifndef EV_WALK_ENABLE
-# define EV_WALK_ENABLE 0 /* not yet */
-#endif
-
 /*****************************************************************************/
 
 #if EV_CHILD_ENABLE && !EV_SIGNAL_ENABLE
@@ -504,13 +500,6 @@ extern void ev_loop_fork (struct ev_loop *loop)  ;
 extern unsigned int ev_backend (struct ev_loop *loop)  ; /* backend in use by loop */
 
 extern void ev_now_update (struct ev_loop *loop)  ; /* update event loop time */
-
-#if EV_WALK_ENABLE
-/* walk (almost) all watchers in the loop of a given type, invoking the */
-/* callback on every such watcher. The callback might stop the watcher, */
-/* but do nothing else with the loop */
-extern void ev_walk (struct ev_loop *loop, int types, void (*cb)(struct ev_loop *loop, int type, void *w))  ;
-#endif
 
 #endif /* prototypes */
 

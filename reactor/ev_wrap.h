@@ -20,7 +20,7 @@
 #define cleanupcnt ((loop)->cleanupcnt)
 #define cleanupmax ((loop)->cleanupmax)
 #define cleanups ((loop)->cleanups)
-#define curpid ((loop)->curpid)
+// #define curpid ((loop)->curpid)
 #define epoll_epermcnt ((loop)->epoll_epermcnt)
 #define epoll_epermmax ((loop)->epoll_epermmax)
 #define epoll_eperms ((loop)->epoll_eperms)

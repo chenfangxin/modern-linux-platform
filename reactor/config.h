@@ -1,17 +1,8 @@
-/* config.h.  Generated from config.h.in by configure.  */
-/* config.h.in.  Generated from configure.ac by autoheader.  */
-
-/* Define to 1 to use the syscall interface for clock_gettime */
-/* #undef HAVE_CLOCK_SYSCALL */
-
 /* Define to 1 if you have the `epoll_ctl' function. */
 #define HAVE_EPOLL_CTL 1
 
 /* Define to 1 if you have the `eventfd' function. */
 #define HAVE_EVENTFD 1
-
-/* Define to 1 if the floor function is available */
-#define HAVE_FLOOR 1
 
 /* Define to 1 if you have the `inotify_init' function. */
 #define HAVE_INOTIFY_INIT 1

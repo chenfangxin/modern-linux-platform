@@ -12,7 +12,7 @@ LINK = $(COMPILE) -o $@
 TARGET=libev.so demo
 
 all: $(TARGET)
-LIBOBJS=ev.o event.o
+LIBOBJS=ev.o 
 
 %.o: %.c
 	$(CC) $(CFLAGS) $(INCLUDES) -c $<
