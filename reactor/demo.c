@@ -13,7 +13,8 @@
 #include <ev.h>
 #define MAXLEN 1023
 #define PORT 9999
-#define ADDR_IP "192.168.1.142"
+// #define ADDR_IP "192.168.1.142"
+#define ADDR_IP "127.0.0.1"
 
 int socket_init();
 void accept_callback(struct ev_loop *loop, ev_io *w, int revents);

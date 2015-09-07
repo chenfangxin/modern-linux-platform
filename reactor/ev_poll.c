@@ -84,9 +84,9 @@ static void poll_poll (struct ev_loop *loop, ev_tstamp timeout)
 
 static int poll_init (struct ev_loop *loop, int flags)
 {
-  backend_mintime = 1e-3;
-  backend_modify  = poll_modify;
-  backend_poll    = poll_poll;
+  loop->backend_mintime = 1e-3;
+  loop->backend_modify  = poll_modify;
+  loop->backend_poll    = poll_poll;
 
   pollidxs = 0; pollidxmax = 0;
   polls    = 0; pollmax    = 0; pollcnt = 0;
