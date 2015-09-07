@@ -56,17 +56,14 @@ static void epoll_modify (struct ev_loop *loop, int fd, int oev, int nev)
   if (expect_true (!epoll_ctl(loop->backend_fd, oev && oldmask != nev ? EPOLL_CTL_MOD : EPOLL_CTL_ADD, fd, &ev)))
     return;
 
-  if (expect_true (errno == ENOENT))
-    {
+  if (expect_true (errno == ENOENT)) {
       /* if ENOENT then the fd went away, so try to do the right thing */
       if (!nev)
         goto dec_egen;
 
       if (!epoll_ctl(loop->backend_fd, EPOLL_CTL_ADD, fd, &ev))
         return;
-    }
-  else if (expect_true (errno == EEXIST))
-    {
+  } else if (expect_true (errno == EEXIST)) {
       /* EEXIST means we ignored a previous DEL, but the fd is still active */
       /* if the kernel mask is the same as the new mask, we assume it hasn't changed */
       if (oldmask == nev)
@@ -74,22 +71,19 @@ static void epoll_modify (struct ev_loop *loop, int fd, int oev, int nev)
 
       if (!epoll_ctl(loop->backend_fd, EPOLL_CTL_MOD, fd, &ev))
         return;
-    }
-  else if (expect_true (errno == EPERM))
-    {
+  } else if (expect_true (errno == EPERM)) {
       /* EPERM means the fd is always ready, but epoll is too snobbish */
       /* to handle it, unlike select or poll. */
       loop->anfds [fd].emask = EV_EMASK_EPERM;
 
       /* add fd to epoll_eperms, if not already inside */
-      if (!(oldmask & EV_EMASK_EPERM))
-        {
+      if (!(oldmask & EV_EMASK_EPERM)) {
           array_needsize (int, epoll_eperms, epoll_epermmax, epoll_epermcnt + 1, EMPTY2);
           epoll_eperms[epoll_epermcnt++] = fd;
-        }
+      }
 
       return;
-    }
+  }
 
   fd_kill (loop, fd);
 
@@ -117,7 +111,7 @@ static void epoll_poll (struct ev_loop *loop, ev_tstamp timeout)
         ev_syserr ("(libev) epoll_wait");
 
       return;
-    }
+  }
 
   for (i = 0; i < eventcnt; ++i) {
       struct epoll_event *ev = loop->epoll_events + i;
@@ -156,8 +150,7 @@ static void epoll_poll (struct ev_loop *loop, ev_tstamp timeout)
 
           /* pre-2.6.9 kernels require a non-null pointer with EPOLL_CTL_DEL, */
           /* which is fortunately easy to do for us. */
-          if (epoll_ctl(loop->backend_fd, want ? EPOLL_CTL_MOD : EPOLL_CTL_DEL, fd, ev))
-            {
+          if (epoll_ctl(loop->backend_fd, want ? EPOLL_CTL_MOD : EPOLL_CTL_DEL, fd, ev)) {
               loop->postfork = 1; /* an error occurred, recreate kernel state */
               continue;
             }
@@ -167,23 +160,20 @@ static void epoll_poll (struct ev_loop *loop, ev_tstamp timeout)
     }
 
   /* if the receive array was full, increase its size */
-  if (expect_false (eventcnt == epoll_eventmax))
-    {
+  if (expect_false (eventcnt == epoll_eventmax)) {
       ev_free (loop->epoll_events);
       epoll_eventmax = array_nextsize (sizeof (struct epoll_event), epoll_eventmax, epoll_eventmax + 1);
       loop->epoll_events = (struct epoll_event *)ev_malloc (sizeof (struct epoll_event) * epoll_eventmax);
-    }
+  }
 
   /* now synthesize events for all fds where epoll fails, while select works... */
-  for (i=epoll_epermcnt; i--; )
-    {
+  for (i=epoll_epermcnt; i--; ) {
       int fd = epoll_eperms [i];
       unsigned char events = loop->anfds [fd].events & (EV_READ | EV_WRITE);
 
-      if (loop->anfds [fd].emask & EV_EMASK_EPERM && events)
+      if (loop->anfds [fd].emask & EV_EMASK_EPERM && events){
         fd_event (loop, fd, events);
-      else
-        {
+	  } else {
           epoll_eperms [i] = epoll_eperms[--epoll_epermcnt];
           loop->anfds [fd].emask = 0;
         }
@@ -217,7 +207,8 @@ static int epoll_init (struct ev_loop *loop, int flags)
 static void epoll_destroy (struct ev_loop *loop)
 {
   ev_free (loop->epoll_events);
-  array_free (epoll_eperm, EMPTY);
+  // array_free (epoll_eperm, EMPTY);
+  ev_free(epoll_eperms); epoll_epermcnt = epoll_epermmax = 0; epoll_eperms = 0;
 }
 
 static void epoll_fork (struct ev_loop *loop)

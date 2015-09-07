@@ -662,17 +662,12 @@ static void * array_realloc (int elem, void *base, int *cur, int cnt)
   memset ((void *)(base), 0, sizeof (*(base)) * (count))
 
 #define array_needsize(type,base,cur,cnt,init)			\
-  if (expect_false ((cnt) > (cur)))				\
-    {								\
+  if (expect_false ((cnt) > (cur)))	{			\
       int ocur_ = (cur);					\
       (base) = (type *)array_realloc				\
          (sizeof (type), (base), &(cur), (cnt));		\
       init ((base) + (ocur_), (cur) - ocur_);			\
-    }
-
-
-#define array_free(stem, idx) \
-  ev_free (stem ## s idx); stem ## cnt idx = stem ## max idx = 0; stem ## s idx = 0
+   }
 
 /*****************************************************************************/
 /* dummy callback for pending events */
@@ -686,30 +681,29 @@ void ev_feed_event (struct ev_loop *loop, void *w, int revents)
   W w_ = (W)w;
   int pri = ABSPRI (w_);
 
-  if (expect_false (w_->pending))
-    pendings [pri][w_->pending - 1].events |= revents;
-  else
-    {
-      w_->pending = ++pendingcnt[pri];
-      array_needsize (ANPENDING, pendings [pri], pendingmax [pri], w_->pending, EMPTY2);
-      pendings [pri][w_->pending - 1].w      = w_;
-      pendings [pri][w_->pending - 1].events = revents;
-    }
+  if (expect_false (w_->pending)) {
+    loop->pendings [pri][w_->pending - 1].events |= revents;
+  } else {
+      w_->pending = ++loop->pendingcnt[pri];
+      array_needsize (ANPENDING, loop->pendings[pri], loop->pendingmax [pri], w_->pending, EMPTY2);
+      loop->pendings [pri][w_->pending - 1].w      = w_;
+      loop->pendings [pri][w_->pending - 1].events = revents;
+  }
 
-  pendingpri = NUMPRI - 1;
+  loop->pendingpri = NUMPRI - 1;
 }
 
 static void feed_reverse (struct ev_loop *loop, W w)
 {
-  array_needsize (W, rfeeds, rfeedmax, rfeedcnt + 1, EMPTY2);
-  rfeeds [rfeedcnt++] = w;
+  array_needsize (W, loop->rfeeds, loop->rfeedmax, loop->rfeedcnt + 1, EMPTY2);
+  loop->rfeeds [loop->rfeedcnt++] = w;
 }
 
 static void feed_reverse_done (struct ev_loop *loop, int revents)
 {
   do{
-    ev_feed_event (loop, rfeeds [--rfeedcnt], revents);
-  }while (rfeedcnt);
+    ev_feed_event (loop, loop->rfeeds[--loop->rfeedcnt], revents);
+  }while (loop->rfeedcnt);
 }
 
 static void queue_events (struct ev_loop *loop, W *events, int eventcnt, int type)
@@ -757,9 +751,9 @@ static void fd_reify (struct ev_loop *loop)
 {
   int i;
 
-  for (i = 0; i < fdchangecnt; ++i)
+  for (i = 0; i < loop->fdchangecnt; ++i)
     {
-      int fd = fdchanges [i];
+      int fd = loop->fdchanges [i];
       ANFD *anfd = loop->anfds + fd;
       ev_io *w;
 
@@ -783,7 +777,7 @@ static void fd_reify (struct ev_loop *loop)
         loop->backend_modify (loop, fd, o_events, anfd->events);
     }
 
-  fdchangecnt = 0;
+  loop->fdchangecnt = 0;
 }
 
 /* something about the given fd changed */
@@ -792,11 +786,10 @@ static void fd_change (struct ev_loop *loop, int fd, int flags)
   unsigned char reify = loop->anfds [fd].reify;
   loop->anfds [fd].reify |= flags;
 
-  if (expect_true (!reify))
-    {
-      ++fdchangecnt;
-      array_needsize (int, fdchanges, fdchangemax, fdchangecnt, EMPTY2);
-      fdchanges [fdchangecnt - 1] = fd;
+  if (expect_true (!reify)) {
+      ++loop->fdchangecnt;
+      array_needsize (int, loop->fdchanges, loop->fdchangemax, loop->fdchangecnt, EMPTY2);
+      loop->fdchanges [loop->fdchangecnt - 1] = fd;
     }
 }
 
@@ -1481,9 +1474,9 @@ void ev_loop_destroy (struct ev_loop *loop)
 
   for (i = NUMPRI; i--; )
     {
-      array_free (pending, [i]);
+  	ev_free(loop->pendings[i]); loop->pendingcnt[i] = loop->pendingmax[i] = 0; loop->pendings[i] = 0;
 #if EV_IDLE_ENABLE
-      array_free (idle, [i]);
+	ev_free(loop->idles[i]); loop->idlecnt[i] = loop->idlemax[i] = 0; loop->idles[i] = 0;
 #endif
     }
 
@@ -1492,22 +1485,22 @@ void ev_loop_destroy (struct ev_loop *loop)
   loop->anfdmax = 0;
 
   /* have to use the microsoft-never-gets-it-right macro */
-  array_free (rfeed, EMPTY);
-  array_free (fdchange, EMPTY);
-  array_free (timer, EMPTY);
+  ev_free (loop->rfeeds); loop->rfeedcnt = loop->rfeedmax = 0; loop->rfeeds = 0;
+  ev_free(loop->fdchanges); loop->fdchangecnt = loop->fdchangemax = 0; loop->fdchanges = 0;
+  ev_free(loop->timers); loop->timercnt = loop->timermax = 0; loop->timers = 0;
 #if EV_PERIODIC_ENABLE
-  array_free (periodic, EMPTY);
+  ev_free(loop->periodics); loop->periodiccnt = loop->periodicmax = 0; loop->periodics = 0;
 #endif
 #if EV_FORK_ENABLE
-  array_free (fork, EMPTY);
+  ev_free(loop->forks); loop->forkcnt = loop->forkmax = 0; loop->forks = 0;
 #endif
 #if EV_CLEANUP_ENABLE
-  array_free (cleanup, EMPTY);
+  ev_free(cleanups); cleanupcnt = cleanupmax = 0; cleanups = 0;
 #endif
-  array_free (prepare, EMPTY);
-  array_free (check, EMPTY);
+  ev_free(loop->prepares); loop->preparecnt = loop->preparemax = 0; loop->prepares = 0;
+  ev_free(checks); checkcnt = checkmax = 0; checks = 0;
 #if EV_ASYNC_ENABLE
-  array_free (async, EMPTY);
+  ev_free(asyncs); asynccnt = asyncmax = 0; asyncs = 0;
 #endif
 
   loop->backend = 0;
@@ -1573,7 +1566,7 @@ static void verify_watcher (struct ev_loop *loop, W w)
   assert (("libev: watcher has invalid priority", ABSPRI (w) >= 0 && ABSPRI (w) < NUMPRI));
 
   if (w->pending)
-    assert (("libev: pending watcher not on pending queue", pendings [ABSPRI (w)][w->pending - 1].w == w));
+    assert (("libev: pending watcher not on pending queue", loop->pendings [ABSPRI (w)][w->pending - 1].w == w));
 }
 
 static void verify_heap (struct ev_loop *loop, ANHE *heap, int N)
@@ -1609,9 +1602,9 @@ void ev_verify (struct ev_loop *loop)
 
   assert (loop->activecnt >= -1);
 
-  assert (fdchangemax >= fdchangecnt);
-  for (i = 0; i < fdchangecnt; ++i)
-    assert (("libev: negative fd in fdchanges", fdchanges [i] >= 0));
+  assert (loop->fdchangemax >= loop->fdchangecnt);
+  for (i = 0; i < loop->fdchangecnt; ++i)
+    assert (("libev: negative fd in fdchanges", loop->fdchanges [i] >= 0));
 
   assert (loop->anfdmax >= 0);
   for (i = 0; i < loop->anfdmax; ++i)
@@ -1633,26 +1626,26 @@ void ev_verify (struct ev_loop *loop)
         }
     }
 
-  assert (timermax >= timercnt);
-  verify_heap (loop, timers, timercnt);
+  assert (loop->timermax >= loop->timercnt);
+  verify_heap (loop, loop->timers, loop->timercnt);
 
 #if EV_PERIODIC_ENABLE
-  assert (periodicmax >= periodiccnt);
-  verify_heap (loop, periodics, periodiccnt);
+  assert (loop->periodicmax >= loop->periodiccnt);
+  verify_heap (loop, loop->periodics, loop->periodiccnt);
 #endif
 
   for (i = NUMPRI; i--; ){
-      assert (pendingmax[i] >= pendingcnt[i]);
+      assert (loop->pendingmax[i] >= loop->pendingcnt[i]);
 #if EV_IDLE_ENABLE
       assert (loop->idleall >= 0);
-      assert (idlemax[i] >= idlecnt[i]);
-      array_verify (loop, (W *)idles[i], idlecnt[i]);
+      assert (loop->idlemax[i] >= loop->idlecnt[i]);
+      array_verify (loop, (W *)loop->idles[i], loop->idlecnt[i]);
 #endif
     }
 
 #if EV_FORK_ENABLE
-  assert (forkmax >= forkcnt);
-  array_verify (loop, (W *)forks, forkcnt);
+  assert (loop->forkmax >= loop->forkcnt);
+  array_verify (loop, (W *)loop->forks, loop->forkcnt);
 #endif
 
 #if EV_CLEANUP_ENABLE
@@ -1666,8 +1659,8 @@ void ev_verify (struct ev_loop *loop)
 #endif
 
 #if EV_PREPARE_ENABLE
-  assert (preparemax >= preparecnt);
-  array_verify (loop, (W *)prepares, preparecnt);
+  assert (loop->preparemax >= loop->preparecnt);
+  array_verify (loop, (W *)loop->prepares, loop->preparecnt);
 #endif
 
 #if EV_CHECK_ENABLE
@@ -1726,22 +1719,20 @@ unsigned int ev_pending_count (struct ev_loop *loop)
   unsigned int count = 0;
 
   for (pri = NUMPRI; pri--; )
-    count += pendingcnt [pri];
+    count += loop->pendingcnt [pri];
 
   return count;
 }
 
 void ev_invoke_pending (struct ev_loop *loop)
 {
-  pendingpri = NUMPRI;
+  loop->pendingpri = NUMPRI;
 
-  while (pendingpri) /* pendingpri possibly gets modified in the inner loop */
-    {
-      --pendingpri;
+  while (loop->pendingpri) { /* pendingpri possibly gets modified in the inner loop */
+      --loop->pendingpri;
 
-      while(pendingcnt[pendingpri])
-        {
-          ANPENDING *p = pendings [pendingpri] + --pendingcnt [pendingpri];
+      while(loop->pendingcnt[loop->pendingpri]) {
+          ANPENDING *p = loop->pendings [loop->pendingpri] + --loop->pendingcnt [loop->pendingpri];
 
           p->w->pending = 0;
           EV_CB_INVOKE (p->w, p->events);
@@ -1760,12 +1751,11 @@ static void idle_reify (struct ev_loop *loop)
       int pri;
 
       for (pri = NUMPRI; pri--; ){
-          if(pendingcnt [pri])
+          if(loop->pendingcnt [pri])
             break;
 
-          if (idlecnt [pri])
-            {
-              queue_events (loop, (W *)idles [pri], idlecnt [pri], EV_IDLE);
+          if (loop->idlecnt [pri]) {
+              queue_events (loop, (W *)loop->idles [pri], loop->idlecnt [pri], EV_IDLE);
               break;
             }
         }
@@ -1778,33 +1768,31 @@ static void timers_reify (struct ev_loop *loop)
 {
   EV_FREQUENT_CHECK;
 
-  if (timercnt && ANHE_at(timers [HEAP0]) < loop->mn_now)
-    {
+  if (loop->timercnt && ANHE_at(loop->timers [HEAP0]) < loop->mn_now) {
       do
         {
-          ev_timer *w = (ev_timer *)ANHE_w(timers [HEAP0]);
+          ev_timer *w = (ev_timer *)ANHE_w(loop->timers [HEAP0]);
 
           /*assert (("libev: inactive timer on timer heap detected", ev_is_active (w)));*/
 
           /* first reschedule or stop timer */
-          if (w->repeat)
-            {
+          if (w->repeat) {
               ev_at (w) += w->repeat;
               if (ev_at (w) < loop->mn_now)
                 ev_at (w) = loop->mn_now;
 
               assert (("libev: negative ev_timer repeat value found while processing timers", w->repeat > 0.));
 
-              ANHE_at_cache(timers [HEAP0]);
-              downheap(timers, timercnt, HEAP0);
-            }
-          else
+              ANHE_at_cache(loop->timers [HEAP0]);
+              downheap(loop->timers, loop->timercnt, HEAP0);
+          } else {
             ev_timer_stop (loop, w); /* nonrepeating: stop timer */
+		  }
 
           EV_FREQUENT_CHECK;
           feed_reverse (loop, (W)w);
         }
-      while (timercnt && ANHE_at(timers [HEAP0]) < loop->mn_now);
+      while (loop->timercnt && ANHE_at(loop->timers [HEAP0]) < loop->mn_now);
 
       feed_reverse_done (loop, EV_TIMER);
     }
@@ -1839,9 +1827,9 @@ static void periodics_reify (struct ev_loop *loop)
 {
   EV_FREQUENT_CHECK;
 
-  while(periodiccnt && ANHE_at (periodics [HEAP0]) < loop->ev_rt_now) {
+  while(loop->periodiccnt && ANHE_at (loop->periodics [HEAP0]) < loop->ev_rt_now) {
       do{
-          ev_periodic *w = (ev_periodic *)ANHE_w (periodics [HEAP0]);
+          ev_periodic *w = (ev_periodic *)ANHE_w (loop->periodics [HEAP0]);
 
           /* first reschedule or stop timer */
           if (w->reschedule_cb){
@@ -1849,19 +1837,19 @@ static void periodics_reify (struct ev_loop *loop)
 
               assert (("libev: ev_periodic reschedule callback returned time in the past", ev_at (w) >= loop->ev_rt_now));
 
-              ANHE_at_cache (periodics [HEAP0]);
-              downheap (periodics, periodiccnt, HEAP0);
+              ANHE_at_cache (loop->periodics [HEAP0]);
+              downheap (loop->periodics, loop->periodiccnt, HEAP0);
             } else if (w->interval) {
               periodic_recalc (loop, w);
-              ANHE_at_cache (periodics [HEAP0]);
-              downheap (periodics, periodiccnt, HEAP0);
+              ANHE_at_cache (loop->periodics [HEAP0]);
+              downheap (loop->periodics, loop->periodiccnt, HEAP0);
             } else {
               ev_periodic_stop (loop, w); /* nonrepeating: stop timer */
 			}
 
           EV_FREQUENT_CHECK;
           feed_reverse (loop, (W)w);
-        }while (periodiccnt && ANHE_at (periodics [HEAP0]) < loop->ev_rt_now);
+        }while (loop->periodiccnt && ANHE_at (loop->periodics [HEAP0]) < loop->ev_rt_now);
 
       feed_reverse_done (loop, EV_PERIODIC);
     }
@@ -1874,19 +1862,19 @@ static void periodics_reschedule (struct ev_loop *loop)
   int i;
 
   /* adjust periodics after time jump */
-  for (i = HEAP0; i < periodiccnt + HEAP0; ++i)
+  for (i = HEAP0; i < loop->periodiccnt + HEAP0; ++i)
     {
-      ev_periodic *w = (ev_periodic *)ANHE_w (periodics [i]);
+      ev_periodic *w = (ev_periodic *)ANHE_w (loop->periodics [i]);
 
       if (w->reschedule_cb)
         ev_at (w) = w->reschedule_cb (w, loop->ev_rt_now);
       else if (w->interval)
         periodic_recalc (loop, w);
 
-      ANHE_at_cache (periodics [i]);
+      ANHE_at_cache (loop->periodics [i]);
     }
 
-  reheap (periodics, periodiccnt);
+  reheap (loop->periodics, loop->periodiccnt);
 }
 #endif
 
@@ -1895,9 +1883,8 @@ static void timers_reschedule (struct ev_loop *loop, ev_tstamp adjust)
 {
   int i;
 
-  for (i = 0; i < timercnt; ++i)
-    {
-      ANHE *he = timers + i + HEAP0;
+  for (i = 0; i < loop->timercnt; ++i) {
+      ANHE *he = loop->timers + i + HEAP0;
       ANHE_w (*he)->at += adjust;
       ANHE_at_cache (*he);
     }
@@ -1947,18 +1934,17 @@ int ev_run (struct ev_loop *loop, int flags)
 #if EV_FORK_ENABLE
       /* we might have forked, so queue fork handlers */
       if (expect_false(loop->postfork))
-        if (forkcnt)
-          {
-            queue_events (loop, (W *)forks, forkcnt, EV_FORK);
+        if (loop->forkcnt){
+            queue_events (loop, (W *)loop->forks, loop->forkcnt, EV_FORK);
             EV_INVOKE_PENDING;
           }
 #endif
 
 #if EV_PREPARE_ENABLE
       /* queue prepare watchers (and execute them) */
-      if (expect_false (preparecnt))
+      if (expect_false (loop->preparecnt))
         {
-          queue_events (loop, (W *)prepares, preparecnt, EV_PREPARE);
+          queue_events (loop, (W *)loop->prepares, loop->preparecnt, EV_PREPARE);
           EV_INVOKE_PENDING;
         }
 #endif
@@ -1989,19 +1975,17 @@ int ev_run (struct ev_loop *loop, int flags)
 
         ECB_MEMORY_FENCE; /* make sure pipe_write_wanted is visible before we check for potential skips */
 
-        if (expect_true (!(flags & EVRUN_NOWAIT || loop->idleall || !loop->activecnt || pipe_write_skipped)))
-          {
+        if (expect_true (!(flags & EVRUN_NOWAIT || loop->idleall || !loop->activecnt || pipe_write_skipped))) {
             waittime = MAX_BLOCKTIME;
 
-            if (timercnt)
-              {
-                ev_tstamp to = ANHE_at(timers [HEAP0]) - loop->mn_now;
+            if (loop->timercnt) {
+                ev_tstamp to = ANHE_at(loop->timers [HEAP0]) - loop->mn_now;
                 if (waittime > to) waittime = to;
-              }
+            }
 
 #if EV_PERIODIC_ENABLE
-            if(periodiccnt){
-                ev_tstamp to = ANHE_at (periodics [HEAP0]) - loop->ev_rt_now;
+            if(loop->periodiccnt){
+                ev_tstamp to = ANHE_at (loop->periodics [HEAP0]) - loop->ev_rt_now;
                 if (waittime > to) waittime = to;
             }
 #endif
@@ -2147,11 +2131,10 @@ static void wlist_del (WL *head, WL elem)
 /* internal, faster, version of ev_clear_pending */
 static void clear_pending (struct ev_loop *loop, W w)
 {
-  if (w->pending)
-    {
-      pendings [ABSPRI (w)][w->pending - 1].w = (W)&loop->pending_w;
+  if (w->pending) {
+      loop->pendings [ABSPRI (w)][w->pending - 1].w = (W)&loop->pending_w;
       w->pending = 0;
-    }
+  }
 }
 
 int ev_clear_pending (struct ev_loop *loop, void *w)  
@@ -2159,9 +2142,8 @@ int ev_clear_pending (struct ev_loop *loop, void *w)
   W w_ = (W)w;
   int pending = w_->pending;
 
-  if (expect_true (pending))
-    {
-      ANPENDING *p = pendings [ABSPRI (w_)] + pending - 1;
+  if (expect_true (pending)) {
+      ANPENDING *p = loop->pendings [ABSPRI (w_)] + pending - 1;
       p->w = (W)&loop->pending_w;
       w_->pending = 0;
       return p->events;
@@ -2246,16 +2228,15 @@ void ev_timer_start (struct ev_loop *loop, ev_timer *w)
 
   EV_FREQUENT_CHECK;
 
-  ++timercnt;
-  ev_start (loop, (W)w, timercnt + HEAP0 - 1);
-  array_needsize (ANHE, timers, timermax, ev_active (w) + 1, EMPTY2);
-  ANHE_w (timers [ev_active (w)]) = (WT)w;
-  ANHE_at_cache (timers [ev_active (w)]);
-  upheap (timers, ev_active (w));
+  ++loop->timercnt;
+  ev_start (loop, (W)w, loop->timercnt + HEAP0 - 1);
+  array_needsize (ANHE, loop->timers, loop->timermax, ev_active (w) + 1, EMPTY2);
+  ANHE_w (loop->timers [ev_active (w)]) = (WT)w;
+  ANHE_at_cache (loop->timers [ev_active (w)]);
+  upheap (loop->timers, ev_active (w));
 
   EV_FREQUENT_CHECK;
 
-  /*assert (("libev: internal timer heap corruption", timers [ev_active (w)] == (WT)w));*/
 }
 
 void ev_timer_stop (struct ev_loop *loop, ev_timer *w)  
@@ -2269,14 +2250,14 @@ void ev_timer_stop (struct ev_loop *loop, ev_timer *w)
   {
     int active = ev_active (w);
 
-    assert (("libev: internal timer heap corruption", ANHE_w (timers [active]) == (WT)w));
+    assert (("libev: internal timer heap corruption", ANHE_w (loop->timers [active]) == (WT)w));
 
-    --timercnt;
+    --loop->timercnt;
 
-    if (expect_true (active < timercnt + HEAP0))
+    if (expect_true (active < loop->timercnt + HEAP0))
       {
-        timers [active] = timers [timercnt + HEAP0];
-        adjustheap (timers, timercnt, active);
+        loop->timers [active] = loop->timers [loop->timercnt + HEAP0];
+        adjustheap (loop->timers, loop->timercnt, active);
       }
   }
 
@@ -2298,8 +2279,8 @@ void ev_timer_again (struct ev_loop *loop, ev_timer *w)
       if (w->repeat)
         {
           ev_at (w) = loop->mn_now + w->repeat;
-          ANHE_at_cache (timers [ev_active (w)]);
-          adjustheap (timers, timercnt, ev_active (w));
+          ANHE_at_cache (loop->timers [ev_active (w)]);
+          adjustheap (loop->timers, loop->timercnt, ev_active (w));
         }
       else
         ev_timer_stop (loop, w);
@@ -2336,16 +2317,15 @@ void ev_periodic_start (struct ev_loop *loop, ev_periodic *w)
 
   EV_FREQUENT_CHECK;
 
-  ++periodiccnt;
-  ev_start (loop, (W)w, periodiccnt + HEAP0 - 1);
-  array_needsize (ANHE, periodics, periodicmax, ev_active (w) + 1, EMPTY2);
-  ANHE_w (periodics [ev_active (w)]) = (WT)w;
-  ANHE_at_cache (periodics [ev_active (w)]);
-  upheap (periodics, ev_active (w));
+  ++loop->periodiccnt;
+  ev_start (loop, (W)w, loop->periodiccnt + HEAP0 - 1);
+  array_needsize (ANHE, loop->periodics, loop->periodicmax, ev_active (w) + 1, EMPTY2);
+  ANHE_w (loop->periodics [ev_active (w)]) = (WT)w;
+  ANHE_at_cache (loop->periodics [ev_active (w)]);
+  upheap (loop->periodics, ev_active (w));
 
   EV_FREQUENT_CHECK;
 
-  /*assert (("libev: internal periodic heap corruption", ANHE_w (periodics [ev_active (w)]) == (WT)w));*/
 }
 
 void ev_periodic_stop (struct ev_loop *loop, ev_periodic *w)  
@@ -2359,14 +2339,13 @@ void ev_periodic_stop (struct ev_loop *loop, ev_periodic *w)
   {
     int active = ev_active (w);
 
-    assert (("libev: internal periodic heap corruption", ANHE_w (periodics [active]) == (WT)w));
+    assert (("libev: internal periodic heap corruption", ANHE_w (loop->periodics [active]) == (WT)w));
 
-    --periodiccnt;
+    --loop->periodiccnt;
 
-    if (expect_true (active < periodiccnt + HEAP0))
-      {
-        periodics [active] = periodics [periodiccnt + HEAP0];
-        adjustheap (periodics, periodiccnt, active);
+    if (expect_true (active < loop->periodiccnt + HEAP0)) {
+        loop->periodics [active] = loop->periodics [loop->periodiccnt + HEAP0];
+        adjustheap (loop->periodics, loop->periodiccnt, active);
       }
   }
 
@@ -2876,13 +2855,13 @@ void ev_idle_start (struct ev_loop *loop, ev_idle *w)
   EV_FREQUENT_CHECK;
 
   {
-    int active = ++idlecnt [ABSPRI (w)];
+    int active = ++loop->idlecnt [ABSPRI (w)];
 
     ++loop->idleall;
     ev_start (loop, (W)w, active);
 
-    array_needsize (ev_idle *, idles [ABSPRI (w)], idlemax [ABSPRI (w)], active, EMPTY2);
-    idles [ABSPRI (w)][active - 1] = w;
+    array_needsize (ev_idle *, loop->idles [ABSPRI (w)], loop->idlemax [ABSPRI (w)], active, EMPTY2);
+    loop->idles [ABSPRI (w)][active - 1] = w;
   }
 
   EV_FREQUENT_CHECK;
@@ -2899,8 +2878,8 @@ void ev_idle_stop (struct ev_loop *loop, ev_idle *w)
   {
     int active = ev_active (w);
 
-    idles [ABSPRI (w)][active - 1] = idles [ABSPRI (w)][--idlecnt [ABSPRI (w)]];
-    ev_active (idles [ABSPRI (w)][active - 1]) = active;
+    loop->idles [ABSPRI (w)][active - 1] = loop->idles [ABSPRI (w)][--loop->idlecnt [ABSPRI (w)]];
+    ev_active (loop->idles [ABSPRI (w)][active - 1]) = active;
 
     ev_stop (loop, (W)w);
     --loop->idleall;
@@ -2918,9 +2897,9 @@ void ev_prepare_start (struct ev_loop *loop, ev_prepare *w)
 
   EV_FREQUENT_CHECK;
 
-  ev_start (loop, (W)w, ++preparecnt);
-  array_needsize (ev_prepare *, prepares, preparemax, preparecnt, EMPTY2);
-  prepares [preparecnt - 1] = w;
+  ev_start (loop, (W)w, ++loop->preparecnt);
+  array_needsize (ev_prepare *, loop->prepares, loop->preparemax, loop->preparecnt, EMPTY2);
+  loop->prepares [loop->preparecnt - 1] = w;
 
   EV_FREQUENT_CHECK;
 }
@@ -2936,8 +2915,8 @@ void ev_prepare_stop (struct ev_loop *loop, ev_prepare *w)
   {
     int active = ev_active (w);
 
-    prepares [active - 1] = prepares [--preparecnt];
-    ev_active (prepares [active - 1]) = active;
+    loop->prepares [active - 1] = loop->prepares [--loop->preparecnt];
+    ev_active (loop->prepares [active - 1]) = active;
   }
 
   ev_stop (loop, (W)w);
@@ -3005,8 +2984,7 @@ static void embed_prepare_cb (struct ev_loop *loop, ev_prepare *prepare, int rev
   {
     struct ev_loop *loop = w->other;
 
-    while (fdchangecnt)
-      {
+    while (loop->fdchangecnt) {
         fd_reify (loop);
         ev_run (loop, EVRUN_NOWAIT);
       }
@@ -3085,9 +3063,9 @@ void ev_fork_start (struct ev_loop *loop, ev_fork *w)
 
   EV_FREQUENT_CHECK;
 
-  ev_start (loop, (W)w, ++forkcnt);
-  array_needsize (ev_fork *, forks, forkmax, forkcnt, EMPTY2);
-  forks [forkcnt - 1] = w;
+  ev_start (loop, (W)w, ++loop->forkcnt);
+  array_needsize (ev_fork *, loop->forks, loop->forkmax, loop->forkcnt, EMPTY2);
+  loop->forks [loop->forkcnt - 1] = w;
 
   EV_FREQUENT_CHECK;
 }
@@ -3103,8 +3081,8 @@ void ev_fork_stop (struct ev_loop *loop, ev_fork *w)
   {
     int active = ev_active (w);
 
-    forks [active - 1] = forks [--forkcnt];
-    ev_active (forks [active - 1]) = active;
+    loop->forks [active - 1] = loop->forks [--loop->forkcnt];
+    ev_active (loop->forks [active - 1]) = active;
   }
 
   ev_stop (loop, (W)w);
