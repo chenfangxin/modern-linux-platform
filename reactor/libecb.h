@@ -1,15 +1,7 @@
 #ifndef ECB_H
 #define ECB_H
 
-/* 16 bits major, 16 bits minor */
-#define ECB_VERSION 0x00010004
-
 #include <inttypes.h>
-#if UINTMAX_MAX > 0xffffffffU
-  #define ECB_PTRSIZE 8
-#else
-  #define ECB_PTRSIZE 4
-#endif
 
 #define ECB_GCC_AMD64 (__amd64 || __amd64__ || __x86_64 || __x86_64__)
 #define ECB_MSVC_AMD64 (_M_AMD64 || _M_X64)
@@ -63,15 +55,9 @@
 /* http://www-01.ibm.com/support/knowledgecenter/SSGH3R_13.1.0/com.ibm.xlcpp131.aix.doc/compiler_ref/compiler_builtins.html */
 #ifndef ECB_MEMORY_FENCE
   #if ECB_GCC_VERSION(2,5) || defined __INTEL_COMPILER || (__llvm__ && __GNUC__) || __SUNPRO_C >= 0x5110 || __SUNPRO_CC >= 0x5110
-    #if __i386 || __i386__
-      #define ECB_MEMORY_FENCE         __asm__ __volatile__ ("lock; orb $0, -1(%%esp)" : : : "memory")
-      #define ECB_MEMORY_FENCE_ACQUIRE __asm__ __volatile__ (""                        : : : "memory")
-      #define ECB_MEMORY_FENCE_RELEASE __asm__ __volatile__ ("")
-    #elif ECB_GCC_AMD64
       #define ECB_MEMORY_FENCE         __asm__ __volatile__ ("mfence"   : : : "memory")
       #define ECB_MEMORY_FENCE_ACQUIRE __asm__ __volatile__ (""         : : : "memory")
       #define ECB_MEMORY_FENCE_RELEASE __asm__ __volatile__ ("")
-	#endif
   #endif
 #endif
 
