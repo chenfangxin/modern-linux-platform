@@ -207,7 +207,6 @@ static int epoll_init (struct ev_loop *loop, int flags)
 static void epoll_destroy (struct ev_loop *loop)
 {
   ev_free (loop->epoll_events);
-  // array_free (epoll_eperm, EMPTY);
   ev_free(loop->epoll_eperms); loop->epoll_epermcnt = loop->epoll_epermmax = 0; loop->epoll_eperms = 0;
 }
 

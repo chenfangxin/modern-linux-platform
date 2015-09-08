@@ -50,61 +50,26 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
-/* try to deduce the maximum number of signals on this platform */
-#if defined EV_NSIG
-/* use what's provided */
-#elif defined NSIG
 # define EV_NSIG (NSIG)
-#elif defined _NSIG
-# define EV_NSIG (_NSIG)
-#elif defined SIGMAX
-# define EV_NSIG (SIGMAX+1)
-#elif defined SIG_MAX
-# define EV_NSIG (SIG_MAX+1)
-#elif defined _SIG_MAX
-# define EV_NSIG (_SIG_MAX+1)
-#elif defined MAXSIG
-# define EV_NSIG (MAXSIG+1)
-#elif defined MAX_SIG
-# define EV_NSIG (MAX_SIG+1)
-#elif defined SIGARRAYSIZE
-# define EV_NSIG (SIGARRAYSIZE) /* Assume ary[SIGARRAYSIZE] */
-#elif defined _sys_nsig
-# define EV_NSIG (_sys_nsig) /* Solaris 2.5 */
-#else
-# define EV_NSIG (8 * sizeof (sigset_t) + 1)
-#endif
 
 #ifndef EV_USE_NANOSLEEP
-# if _POSIX_C_SOURCE >= 199309L
-#  define EV_USE_NANOSLEEP EV_FEATURE_OS
-# else
-#  define EV_USE_NANOSLEEP 0
-# endif
+#define EV_USE_NANOSLEEP EV_FEATURE_OS
 #endif
 
 #ifndef EV_USE_SELECT
-# define EV_USE_SELECT EV_FEATURE_BACKENDS
+#define EV_USE_SELECT EV_FEATURE_BACKENDS
 #endif
 
 #ifndef EV_USE_POLL
-#  define EV_USE_POLL EV_FEATURE_BACKENDS
+#define EV_USE_POLL EV_FEATURE_BACKENDS
 #endif
 
 #ifndef EV_USE_EPOLL
-# if __linux && (__GLIBC__ > 2 || (__GLIBC__ == 2 && __GLIBC_MINOR__ >= 4))
-#  define EV_USE_EPOLL EV_FEATURE_BACKENDS
-# else
-#  define EV_USE_EPOLL 0
-# endif
+#define EV_USE_EPOLL EV_FEATURE_BACKENDS
 #endif
 
 #ifndef EV_USE_INOTIFY
-# if __linux && (__GLIBC__ > 2 || (__GLIBC__ == 2 && __GLIBC_MINOR__ >= 4))
-#  define EV_USE_INOTIFY EV_FEATURE_OS
-# else
-#  define EV_USE_INOTIFY 0
-# endif
+#define EV_USE_INOTIFY EV_FEATURE_OS
 #endif
 
 #ifndef EV_PID_HASHSIZE
@@ -171,17 +136,9 @@ int (eventfd) (unsigned int initval, int flags);
 
 #if EV_USE_SIGNALFD
 /* our minimum requirement is glibc 2.7 which has the stub, but not the header */
-# include <stdint.h>
-# ifndef SFD_NONBLOCK
-#  define SFD_NONBLOCK O_NONBLOCK
-# endif
-# ifndef SFD_CLOEXEC
-#  ifdef O_CLOEXEC
-#   define SFD_CLOEXEC O_CLOEXEC
-#  else
-#   define SFD_CLOEXEC 02000000
-#  endif
-# endif
+#include <stdint.h>
+#define SFD_NONBLOCK O_NONBLOCK
+#define SFD_CLOEXEC 02000000
 int signalfd (int fd, const sigset_t *mask, int flags);
 
 struct signalfd_siginfo
@@ -209,10 +166,28 @@ struct signalfd_siginfo
 #define EV_TV_SET(tv,t) do { tv.tv_sec = (long)t; tv.tv_usec = (long)((t - tv.tv_sec) * 1e6); } while (0)
 #define EV_TS_SET(ts,t) do { ts.tv_sec = (long)t; ts.tv_nsec = (long)((t - ts.tv_sec) * 1e9); } while (0)
 
-#include "libecb.h"
+/*****************************************************************************/
+
+/* libecb.h */
+#include <inttypes.h>
+
+/* http://www-01.ibm.com/support/knowledgecenter/SSGH3R_13.1.0/com.ibm.xlcpp131.aix.doc/compiler_ref/compiler_builtins.html */
+#define ECB_MEMORY_FENCE         __asm__ __volatile__ ("mfence"   : : : "memory")
+#define ECB_MEMORY_FENCE_ACQUIRE __asm__ __volatile__ (""         : : : "memory")
+#define ECB_MEMORY_FENCE_RELEASE __asm__ __volatile__ ("")
+
+#define ecb_expect(expr,value)         __builtin_expect ((expr),(value))
+
+/* put around conditional expressions if you are very sure that the  */
+/* expression is mostly true or mostly false. note that these return */
+/* booleans, not the expression.                                     */
+#define ecb_expect_false(expr) ecb_expect (!!(expr), 0)
+#define ecb_expect_true(expr)  ecb_expect (!!(expr), 1)
 
 #define expect_false(cond) ecb_expect_false (cond)
 #define expect_true(cond)  ecb_expect_true  (cond)
+
+/*****************************************************************************/
 
 #define NUMPRI (EV_MAXPRI - EV_MINPRI + 1)
 
@@ -222,7 +197,6 @@ struct signalfd_siginfo
 # define ABSPRI(w) (((W)w)->priority - EV_MINPRI)
 #endif
 
-#define EMPTY       /* required for microsofts broken pseudo-c compiler */
 #define EMPTY2(a,b) /* used to suppress some warnings */
 
 typedef ev_watcher *W;
