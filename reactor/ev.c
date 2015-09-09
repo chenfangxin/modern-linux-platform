@@ -1,5 +1,21 @@
 /* this big block deduces configuration from config.h */
+#include <stdlib.h>
+#include <string.h>
+#include <fcntl.h>
+#include <stddef.h>
+#include <stdio.h>
+#include <assert.h>
+#include <errno.h>
+#include <sys/types.h>
+#include <time.h>
+#include <limits.h>
+#include <signal.h>
+#include <sys/time.h>
+#include <sys/wait.h>
+#include <unistd.h>
+
 #include "config.h"
+# include "ev.h"
 
 #ifndef EV_USE_NANOSLEEP
 #define EV_USE_NANOSLEEP EV_FEATURE_OS
@@ -28,49 +44,8 @@
 #ifndef EV_USE_EVENTFD
 #define EV_USE_EVENTFD EV_FEATURE_OS
 #endif
- 
-#include <stdlib.h>
-#include <string.h>
-#include <fcntl.h>
-#include <stddef.h>
-
-#include <stdio.h>
-
-#include <assert.h>
-#include <errno.h>
-#include <sys/types.h>
-#include <time.h>
-#include <limits.h>
-
-#include <signal.h>
-
-# include "ev.h"
-
-#include <sys/time.h>
-#include <sys/wait.h>
-#include <unistd.h>
 
 # define EV_NSIG (NSIG)
-
-#ifndef EV_USE_NANOSLEEP
-#define EV_USE_NANOSLEEP EV_FEATURE_OS
-#endif
-
-#ifndef EV_USE_SELECT
-#define EV_USE_SELECT EV_FEATURE_BACKENDS
-#endif
-
-#ifndef EV_USE_POLL
-#define EV_USE_POLL EV_FEATURE_BACKENDS
-#endif
-
-#ifndef EV_USE_EPOLL
-#define EV_USE_EPOLL EV_FEATURE_BACKENDS
-#endif
-
-#ifndef EV_USE_INOTIFY
-#define EV_USE_INOTIFY EV_FEATURE_OS
-#endif
 
 #ifndef EV_PID_HASHSIZE
 # define EV_PID_HASHSIZE EV_FEATURE_DATA ? 16 : 1
@@ -176,13 +151,11 @@ struct signalfd_siginfo
 #define ECB_MEMORY_FENCE_ACQUIRE __asm__ __volatile__ (""         : : : "memory")
 #define ECB_MEMORY_FENCE_RELEASE __asm__ __volatile__ ("")
 
-#define ecb_expect(expr,value)         __builtin_expect ((expr),(value))
-
 /* put around conditional expressions if you are very sure that the  */
 /* expression is mostly true or mostly false. note that these return */
 /* booleans, not the expression.                                     */
-#define ecb_expect_false(expr) ecb_expect (!!(expr), 0)
-#define ecb_expect_true(expr)  ecb_expect (!!(expr), 1)
+#define ecb_expect_false(expr) __builtin_expect(!!(expr), 0)
+#define ecb_expect_true(expr)  __builtin_expect(!!(expr), 1)
 
 #define expect_false(cond) ecb_expect_false (cond)
 #define expect_true(cond)  ecb_expect_true  (cond)
