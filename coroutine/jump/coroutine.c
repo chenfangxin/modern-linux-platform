@@ -43,6 +43,9 @@ enum {
 	FRAME_SZ=5
 };
 
+/*
+ * 初始化coroutine
+ * */
 void start(coroutine *c, func f, void *arg, void *sp)
 {
 	start_params *p = ((start_params *)sp)-1;
@@ -57,6 +60,9 @@ void start(coroutine *c, func f, void *arg, void *sp)
 	set_sp(p-FRAME_SZ);
 	set_fp(p);
 	get_fp(p);	
+	/*
+	 * 直接调用setjmp，会返回0；从longjmp跳转回来的，返回非0
+	 * */
 	if(!setjmp(p->c->callee_context)){
 		set_sp(p->old_sp);
 		set_fp(p->old_fp);
