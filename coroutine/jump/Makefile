@@ -1,7 +1,7 @@
 TARGETS := demo
 
 target_OBJECTS = demo.o coroutine.o
-CFLAGS = -g -Wall
+CFLAGS = -g -Wall -m64
 CC = gcc
 INCLUDES=-I./
 COMPILE = $(CC) $(CFLAGS) $(INCLUDES)
