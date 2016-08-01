@@ -12,3 +12,7 @@
 + `void longjmp(jmp_buf env, int value)`
 
 	该函数用来恢复`env`中保存的状态。参数`value`被用来设置`setjmp`的返回值。
+
+由于`jmp_buf`结构导致实现栈切换功能有一定的困难，而且可移植性较差。
+
+`libconcurrency`库采用了**栈拷贝**技术来实现协程的栈切换。
