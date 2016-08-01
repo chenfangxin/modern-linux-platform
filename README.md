@@ -9,10 +9,16 @@ modern linux progarmming environment
 `CONFIG_EPOLL`  
 
 ##示例程序
-`timer`   
-	几种定时器实现算法的演示
++ timer   
 
-`reactor`
-  
-`nanomsg`
-  
+几种定时器实现算法的演示
+
++ reactor
+	
+libev中`reacotr`模式的实现
+
++ nanomsg
+
++ coroutine
+	
+几种C语言实现`coroutine`的方法
