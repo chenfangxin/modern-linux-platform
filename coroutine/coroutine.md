@@ -10,7 +10,7 @@
   protothreads库使用switch语句和GCC lable addrss扩展两种方式实现coroutine。
 
 ## setjmp/longjmp
-  jump使用setjmp/longjmp实现coroutine。
+  jump和libconcurrency使用setjmp/longjmp实现coroutine。
   使用setjmp/longjmp有限制，就是必须先调用setjmp，然后才能调用longjmp，而且`jmp_buf`中存放的内容没有明确的定义。
 
 ## ucontext function
