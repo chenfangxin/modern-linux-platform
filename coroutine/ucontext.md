@@ -2,7 +2,7 @@
 
 GNU C库提供了一系列的用于创建，保存和切换用户态Context的函数，主要有如下4个：
 
-+ `void makecontext(ucontext_t *ucp, void (*func)(), int argc, ...)`
++ `void makecontext(ucontext_t *ucp, void ( *func)(), int argc, ...)`
 	
 	该函数用于初始化一个`ucontext_t`结构体。参数`func`指向该`context`的入口函数；`argc`指明参数个数。
 
