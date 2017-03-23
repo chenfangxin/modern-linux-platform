@@ -19,5 +19,7 @@
 
 ## ucontext function
   libtask使用ucontext相关函数实现coroutine。这种方式的缺点是，`swapcontext`函数用到了内核锁，会影响性能。
-  
+
+## 自定义的setjmp/longjmp函数
+  `state_threads`，VPP等项目中，都用汇编语言自定义了`setjmp/longjmp`函数。
 
